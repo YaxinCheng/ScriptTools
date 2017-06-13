@@ -22,7 +22,7 @@ if not isinstance(Page, list) and Page: Page = [(int(Page) - 1) * 20 + 1]
 for index, page in enumerate(Page):
     searchURL = baseURL.format(term=Term, faculty=Facu, page=page)
     source = requests.get(searchURL).text
-    if not re.search(emptyRegex, source, flags=re.I|re.M): break
+    if not re.search(emptyRegex, source): break
     print('Searching on page', index + 1 if len(Page) > 1 else int((page - 1)/20 + 1), ':')
-    for course in re.findall(nameRegex, source, flags=re.I|re.M):
+    for course in re.findall(nameRegex, source, flags=re.I):
         print(course.strip('<b></b>'))
