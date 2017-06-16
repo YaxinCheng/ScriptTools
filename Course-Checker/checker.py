@@ -8,7 +8,7 @@ parser = argparse.ArgumentParser(description='Search for the existence of course
 parser.add_argument('-t', '--term', nargs='*', default='w', help='Term (Available input: winter/fall/w/f; winter by default)')
 parser.add_argument('-d', '--digit', help='Course Digit (Precise search only; Cannot search with name at the same time)')
 parser.add_argument('-n', '--name', help='Name (Partial search is available; Mobile Computing by default; Cannot search with digit at the same time)')
-parser.add_argument('-p', '--page', help='Page (One specific page needs to be search; All pages by default)')
+parser.add_argument('-p', '--page', type=int, help='Page (One specific page needs to be search; All pages by default)')
 parser.add_argument('-f', '--faculty', help='Faculty (Shorthand of faculty name; CSCI by default)')
 args = parser.parse_args()
 
@@ -26,7 +26,7 @@ nameRegex = '<b>{faculty}\s{digit}\s.*?{name}.*?<\/b>'.format(faculty=Facu, name
 emptyRegex = '<b>{faculty}\s[0-9]*?\s.+?<\/b>'.format(faculty=Facu)
 for term in Term:
     print('Searching {name} in {term} term for {faculty}'.format(name=Facu+' '+Digit if Name == '.+?' else Name, term=reverseTermMapping[term], faculty=Facu))
-    if not isinstance(Page, list) and Page: Page = [(int(Page) - 1) * 20 + 1]
+    if not isinstance(Page, list) and Page: Page = [(Page - 1) * 20 + 1]
     for index, page in enumerate(Page):
         searchURL = baseURL.format(term=term, faculty=Facu, page=page)
         source = requests.get(searchURL).text
