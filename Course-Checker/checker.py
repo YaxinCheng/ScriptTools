@@ -7,12 +7,12 @@ import sys
 
 baseURL = 'https://dalonline.dal.ca/PROD/fysktime.P_DisplaySchedule?s_term={term}&s_crn=&s_subj={faculty}&s_numb=&n={page}&s_district=100'
 parser = argparse.ArgumentParser(description='Search for the existence of courses')
+parser.add_argument('-o', '--open', default='f', help='Open the url in the browser (Available input: true/false/t/f/1/0)')
 parser.add_argument('-t', '--term', nargs='*', default='w', help='Term (Available input: winter/fall/w/f; winter by default)')
 parser.add_argument('-d', '--digit', help='Course Digit (Precise search only; Cannot search with name at the same time)')
 parser.add_argument('-n', '--name', help='Name (Partial search is available; Mobile Computing by default; Cannot search with digit at the same time)')
 parser.add_argument('-p', '--page', type=int, help='Page (One specific page needs to be search; All pages by default)')
 parser.add_argument('-f', '--faculty', help='Faculty (Shorthand of faculty name; CSCI by default)')
-parser.add_argument('-o', '--open', default='w', help='Open the url in the browser (Available input: winter/fall/w/f)')
 args = parser.parse_args()
 
 def openURL(baseURL, term, faculty, page):
@@ -25,7 +25,8 @@ termMapping = {'winter': 201820, 'fall': 201810, 'w': 201820, 'f': 201810}
 reverseTermMapping = {201810: 'Fall', 201820: 'Winter'}
 Term = [termMapping[args.term]] if not isinstance(args.term, list) else [termMapping[term] for term in args.term]
 Facu = (args.faculty or 'CSCI').upper()
-if args.open:
+Open = args.open.lower() in ['t', 'true', '1']
+if Open:
     openURL(baseURL, Term[0], Facu, Page)
 Name = args.name or 'Mobile Computing'
 Digit = args.digit
