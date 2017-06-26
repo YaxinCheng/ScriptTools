@@ -4,7 +4,7 @@ import requests
 import argparse
 import webbrowser
 import sys
-__FALL__, __WINTER__, __SUMMER__ = 201810, 201820, 201830
+from datetime import datetime
 
 baseURL = 'https://dalonline.dal.ca/PROD/fysktime.P_DisplaySchedule?s_term={term}&s_crn=&s_subj={faculty}&s_numb=&n={page}&s_district=100'
 parser = argparse.ArgumentParser(description='Search for the existence of courses')
@@ -14,6 +14,7 @@ parser.add_argument('-d', '--digit', help='Course Digit (Precise search only; Ca
 parser.add_argument('-n', '--name', help='Name (Partial search is available; Mobile Computing by default; Cannot search with digit at the same time)')
 parser.add_argument('-p', '--page', type=int, help='Page (One specific page needs to be search; All pages by default)')
 parser.add_argument('-f', '--faculty', help='Faculty (Shorthand of faculty name; CSCI by default)')
+parser.add_argument('-y', '--year', type=int, help='Year of the timetable (Historical data may be unaccessible)')
 args = parser.parse_args()
 
 def openURL(baseURL, term, faculty, page):
@@ -23,6 +24,10 @@ def openURL(baseURL, term, faculty, page):
 
 encodePage = lambda number: int((number - 1) * 20 + 1)
 decodePage = lambda number: int((number - 1) / 20 + 1)
+encodeYear = lambda year: (year + 1) * 100
+
+year = encodeYear(args.year or datetime.now().year)
+__FALL__, __WINTER__, __SUMMER__ = year+10, year+20, year+30
 
 Page = [encodePage(args.page)] if args.page else [ encodePage(i) for i in range(1, 8) ]
 reverseTermMapping = {__FALL__: 'fall', __WINTER__: 'winter', __SUMMER__: 'summer'}
