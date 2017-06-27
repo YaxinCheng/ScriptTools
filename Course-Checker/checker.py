@@ -10,7 +10,7 @@ baseURL = 'https://dalonline.dal.ca/PROD/fysktime.P_DisplaySchedule?s_term={term
 parser = argparse.ArgumentParser(description='Search for the existence of courses')
 parser.add_argument('-o', '--open', action='store_true', help='Open the url in the browser')
 parser.add_argument('-t', '--term', nargs='*', default='w', help='Term (Available input: winter/fall/w/f; winter by default)')
-parser.add_argument('-d', '--digit', help='Course Digit (Precise search only; Cannot search with name at the same time)')
+parser.add_argument('-d', '--digit', type=int, help='Course Digit (Precise search only; Cannot search with name at the same time)')
 parser.add_argument('-n', '--name', help='Name (Partial search is available; Mobile Computing by default; Cannot search with digit at the same time)')
 parser.add_argument('-p', '--page', type=int, help='Page (One specific page needs to be search; All pages by default)')
 parser.add_argument('-f', '--faculty', help='Faculty (Shorthand of faculty name; CSCI by default)')
@@ -27,7 +27,7 @@ decodePage = lambda number: int((number - 1) / 20 + 1)
 encodeYear = lambda year: (year + 1) * 100
 
 year = encodeYear(args.year or datetime.now().year)
-__FALL__, __WINTER__, __SUMMER__ = year+10, year+20, year+30
+__FALL__, __WINTER__, __SUMMER__ = year + 10, year + 20, year + 30
 
 Page = [encodePage(args.page)] if args.page else [ encodePage(i) for i in range(1, 8) ]
 reverseTermMapping = {__FALL__: 'fall', __WINTER__: 'winter', __SUMMER__: 'summer'}
@@ -44,7 +44,7 @@ else: Digit = '[0-9]*?'
 nameRegex = '<b>{faculty}\s{digit}\s.*?{name}.*?<\/b>'.format(faculty=Facu, name=Name, digit=Digit)
 emptyRegex = '<b>{faculty}\s[0-9]*?\s.+?<\/b>'.format(faculty=Facu)
 for term in Term:
-    print('Searching {name} in {term} term for {faculty}'.format(name=Facu+' '+Digit if Name == '.+?' else Name, term=reverseTermMapping[term], faculty=Facu))
+    print('Searching {name} in {term} term for {faculty}'.format(name=Facu+' '+str(Digit) if Name == '.+?' else Name, term=reverseTermMapping[term], faculty=Facu))
     for index, page in enumerate(Page):
         searchURL = baseURL.format(term=term, faculty=Facu, page=page)
         source = requests.get(searchURL).text
