@@ -10,7 +10,7 @@ baseURL = 'https://dalonline.dal.ca/PROD/fysktime.P_DisplaySchedule?s_term={term
 parser = argparse.ArgumentParser(description='Search for the existence of courses')
 parser.add_argument('-o', '--open', action='store_true', help='Open the url in the browser')
 parser.add_argument('-t', '--term', nargs='*', default='w', help='Term (Available input: winter/fall/w/f; winter by default)')
-parser.add_argument('-d', '--digit', nargs='*', type=int, help='Course Digit (Precise search only; Cannot search with name at the same time)')
+parser.add_argument('-d', '--digit', nargs='*', help='Course Digit (Precise search only; Cannot search with name at the same time)')
 parser.add_argument('-n', '--name', nargs='*', help='Name (Partial search is available; Mobile Computing by default; Cannot search with digit at the same time)')
 parser.add_argument('-p', '--page', type=int, help='Page (One specific page needs to be search; All pages by default)')
 parser.add_argument('-f', '--faculty', help='Faculty (Shorthand of faculty name; CSCI by default)')
@@ -26,7 +26,6 @@ encodePage = lambda number: int((number - 1) * 20 + 1)
 decodePage = lambda number: int((number - 1) / 20 + 1)
 encodeYear = lambda year: (year + 1) * 100
 decodeYear = lambda year: int(year / 100) - 1
-encodeSearch = lambda element: str(element)
 
 year = encodeYear(args.year or datetime.now().year)
 __FALL__, __WINTER__, __SUMMER__ = year + 10, year + 20, year + 30
@@ -42,10 +41,10 @@ Name = args.name or ['Mobile Computing']
 Digit = args.digit
 if Digit: 
     Name = '.+?'
-    Digit = '(' + '|'.join(map(encodeSearch, args.digit)) + ')'
+    Digit = '(' + '|'.join(args.digit) + ')'
 else: 
     Digit = '[0-9]*?'
-    Name = '(' + '|'.join(map(encodeSearch, Name)) + ')'
+    Name = '(' + '|'.join(Name) + ')'
 
 nameRegex = re.compile('<b>{faculty}\s{digit}\s.*?{name}.*?<\/b>'.format(faculty=Facu, name=Name, digit=Digit), re.I)
 emptyRegex = re.compile('<b>{faculty}\s[0-9]*?\s.+?<\/b>'.format(faculty=Facu))
