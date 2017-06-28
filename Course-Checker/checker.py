@@ -41,14 +41,15 @@ Digit = args.digit
 if Digit: Name = '.+?'
 else: Digit = '[0-9]*?'
 
-nameRegex = '<b>{faculty}\s{digit}\s.*?{name}.*?<\/b>'.format(faculty=Facu, name=Name, digit=Digit)
-emptyRegex = '<b>{faculty}\s[0-9]*?\s.+?<\/b>'.format(faculty=Facu)
+nameRegex = re.compile('<b>{faculty}\s{digit}\s.*?{name}.*?<\/b>'.format(faculty=Facu, name=Name, digit=Digit), re.I)
+emptyRegex = re.compile('<b>{faculty}\s[0-9]*?\s.+?<\/b>'.format(faculty=Facu))
+clearRegex = re.compile('(<b>)|(<\/b>)')
 for term in Term:
     print('Searching {name} in {term} term for {faculty}'.format(name=Facu+' '+str(Digit) if Name == '.+?' else Name, term=reverseTermMapping[term], faculty=Facu))
     for index, page in enumerate(Page):
         searchURL = baseURL.format(term=term, faculty=Facu, page=page)
         source = requests.get(searchURL).text
-        if not re.search(emptyRegex, source): break
+        if not emptyRegex.search(source): break
         print('Searching on page', index + 1 if len(Page) > 1 else decodePage(page), ':')
-        for course in re.findall(nameRegex, source, flags=re.I):
-            print(course.strip('<b></b>'))
+        for course in nameRegex.findall(source):
+            print(clearRegex.sub('', course))
