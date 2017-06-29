@@ -16,9 +16,10 @@ commit.add_argument('message', metavar='message', help='Version info of the comm
 args = mainParser.parse_args() 
 
 if 'projectName' in args:
-    with open('main.py', 'w') as main: main.write('''from flask import Flask\nimport settings\n\napp = Flask(__name__)\n\nfor ia in settings.installedApps:\n    app.register_blueprint(ia)\nhost = '127.0.0.1' if settings.DEBUG else '0.0.0.0'\nif __name__ == '__main__':\n    app.run(host=host, port=8000, debug=settings.DEBUG, threaded=True)''')
-    with open('db.py', 'w') as db: db.write('import os\n#Configure your db here')
-    with open('settings.py', 'w') as settings: settings.write('import os\nDEBUG = True\n# Set up your db uri here\ninstalledApps = []')
+    with open('main.py') as main: main.write('''from flask import Flask\nimport settings\n\napp = Flask(__name__)\n\nfor ia in settings.installedApps:\n    app.register_blueprint(ia)\nhost = '127.0.0.1' if settings.DEBUG else '0.0.0.0'\nif __name__ == '__main__':\n    app.run(host=host, port=8000, debug=settings.DEBUG, threaded=True)''')
+    with open('db.py') as db: db.write('import os\n#Configure your db here')
+    with open('settings.py') as settings: settings.write('import os\nDEBUG = True\n# Set up your db uri here\ninstalledApps = []')
+    os.makedirs('static')
 elif 'appName' in args:
     curPath = os.path.dirname(os.path.realpath(__file__))
     appName = args.appName
@@ -26,7 +27,7 @@ elif 'appName' in args:
     os.makedirs(appPath)
     os.makedirs(appPath + '/templates')
     with open(appPath + '/__init__.py', 'w') as init: init.write('') 
-    with open(appPath + '/models.py', 'w') as models: models.write('')
+    with open(appPath + '/models.py', 'w') as models: models.write("")
     with open(appPath + '/forms.py', 'w') as forms: forms.write('')
     with open(appPath + '/views.py', 'w') as views: 
         views.write('from flask import request, render_template, abort, Blueprint, redirect, url_for\nfrom jinja2 import TemplateNotFound\n')
