@@ -14,11 +14,16 @@ runserver.add_argument('IP', nargs='?', help='ip address')
 commit = subparser.add_parser('commit', help='Commit all files and push them to the remote repo')
 commit.add_argument('message', metavar='message', help='Version info of the commit')
 args = mainParser.parse_args() 
+dirName = os.path.basename(os.getcwd())
 
-if 'projectName' in args:
-    with open('main.py') as main: main.write('''from flask import Flask\nimport settings\n\napp = Flask(__name__)\n\nfor ia in settings.installedApps:\n    app.register_blueprint(ia)\nhost = '127.0.0.1' if settings.DEBUG else '0.0.0.0'\nif __name__ == '__main__':\n    app.run(host=host, port=8000, debug=settings.DEBUG, threaded=True)''')
-    with open('db.py') as db: db.write('import os\n#Configure your db here')
-    with open('settings.py') as settings: settings.write('import os\nDEBUG = True\n# Set up your db uri here\ninstalledApps = []')
+if 'projectName' in  args:
+    os.makedirs(dirName)
+    with open(os.path.join(dirName, '__init__.py'), 'w') as init: init.write('')
+    with open(os.path.join(dirName, 'main.py'), 'w') as main: main.write('''from flask import Flask\nimport settings\n\napp = Flask(__name__)\n\nfor ia in settings.installedApps:\n    app.register_blueprint(ia)\nhost = '127.0.0.1' if settings.DEBUG else '0.0.0.0'\nif __name__ == '__main__':\n    app.run(host=host, port=8000, debug=settings.DEBUG, threaded=True)''')
+    with open(os.path.join(dirName, 'db.py'), 'w') as db: db.write('import os\n#Configure your db here')
+    with open(os.path.join(dirName, 'settings.py'), 'w') as settings: 
+        settings.write('import os\nDEBUG = True\n# Set up your db uri here\ninstalledApps = []\n')
+        settings.write('parent = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))\nos.sys.path.insert(0, parent)\n\n')
     os.makedirs('static')
 elif 'appName' in args:
     curPath = os.path.dirname(os.path.realpath(__file__))
@@ -33,9 +38,10 @@ elif 'appName' in args:
         views.write('from flask import request, render_template, abort, Blueprint, redirect, url_for\nfrom jinja2 import TemplateNotFound\n')
         views.write("from {app}.models import *\nfrom {app}.forms import *\n\n{app} = Blueprint('{app}', __name__, template_folder = 'templates')\n\n".format(app=appName))
         views.write("# Add your router functions below")
-    with open(curPath + '/settings.py', 'a') as settings: settings.write('from {app} import views as {app}_views\ninstalledApps.append({app}_views.{app})\n'.format(app=appName))
+    with open(curPath + '/' + dirName + '/settings.py', 'a') as settings: settings.write('from {app} import views as {app}_views\ninstalledApps.append({app}_views.{app})\n'.format(app=appName))
 elif 'IP' in args:
-    os.system('python main.py')
+    maindir = os.path.join(dirName, 'main.py')
+    os.system('python {}'.format(maindir))
 elif 'message' in args:
     log = args.message
     os.system('git add .')
