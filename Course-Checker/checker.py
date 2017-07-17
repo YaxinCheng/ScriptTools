@@ -1,27 +1,26 @@
 #!/Users/Yaxin.Cheng@iCloud.com/Developer/venv/bin/python
-import re
+import re, argparse, webbrowser, sys
 import requests
-import argparse
-import webbrowser
-import sys
 from datetime import datetime
 
 baseURL = 'https://dalonline.dal.ca/PROD/fysktime.P_DisplaySchedule?s_term={term}&s_crn=&s_subj={faculty}&s_numb=&n={page}&s_district=All'
 parser = argparse.ArgumentParser(description='Search for the existence of courses')
 parser.add_argument('-o', '--open', action='store_true', help='Open the url in the browser')
-parser.add_argument('-t', '--term', nargs='*', default=['f', 'w'], help='Term (Available input: winter/fall/w/f; winter by default)')
-parser.add_argument('-d', '--digit', nargs='*', help='Course Digit (Fuzzy search available (regex); Cannot search with name at the same time)')
-parser.add_argument('-n', '--name', nargs='*', help='Name (Partial search is available; Mobile Computing by default; Cannot search with digit at the same time)')
-parser.add_argument('-f', '--faculty', help='Faculty (Shorthand of faculty name; CSCI by default)')
 parser.add_argument('-s', '--show', action='store_true', help='Show course dates')
+parser.add_argument('-t', '--term', nargs='*', default=['f', 'w'], help='Term (Available input: winter/fall/w/f; fall and winter by default)')
+parser.add_argument('-d', '--digit', nargs='*', help='Course Digit (Fuzzy search available (regex); Cannot search with name at the same time)')
+parser.add_argument('-n', '--name', nargs='*', help='Name (Partial search is available; Cannot search with digit at the same time)')
+parser.add_argument('-f', '--faculty', help='Faculty (Shorthand of faculty name)')
+parser.add_argument('-r', '--range', metavar='TIME', default='0:2400', help='''Time range the courses are available. Example: ":1605"=before 16:05, "1605:"=after 16:05, "1505:1605"=between 15:05 and 16:05''')
 parser.add_argument('-w', '--week', default='MTRWF', help='Week days which courses are available; Example: MWF: Mon, Wed, Fri')
 parser.add_argument('-y', '--year', type=int, help='Year of the timetable (Historical data may be unaccessible)')
-parser.add_argument('-r', '--range', metavar='TIME', default='0:2400', help='''Time range the courses are available. Example: ":1605"=before 16:05, "1605:"=after 16:05, "1505:1605"=between 15:05 and 16:05''')
-args = parser.parse_args()
+args = parser.parse_args() 
+if not (args.faculty and (args.name or args.digit)): 
+    parser.print_help()
+    sys.exit(0)
 
 def openURL(baseURL, term, faculty, page):
-    page = page[0] if isinstance(page, list) else (page - 1) * 20 + 1
-    webbrowser.open(baseURL.format(term=term, faculty=faculty, page=page))
+    webbrowser.open(baseURL.format(term=term, faculty=faculty, page=0))
     sys.exit(0)
 
 encodePage = lambda number: int((number - 1) * 20 + 1)
@@ -36,19 +35,13 @@ Page = [ encodePage(i) for i in range(1, 8) ]
 reverseTermMapping = {__FALL__: 'fall', __WINTER__: 'winter', __SUMMER__: 'summer'}
 termMapping = {**{value: key for key, value in reverseTermMapping.items()}, 'w': __WINTER__, 'f': __FALL__, 's': __SUMMER__}
 Term = [termMapping[args.term.lower()]] if not isinstance(args.term, list) else [termMapping[term.lower()] for term in args.term]
-Facu = (args.faculty or 'CSCI').upper()
+Facu = args.faculty.upper()
 Week = args.week
 Time = list(map(encodeTime, args.range.split(':')))
 if args.open:
     openURL(baseURL, Term[0], Facu, Page)
-Name = args.name or ['Mobile Computing']
-Digit = args.digit
-if Digit: 
-    Name = '.+?'
-    Digit = '(' + '|'.join(args.digit) + ')'
-else: 
-    Digit = '[0-9]*?'
-    Name = '(' + '|'.join(Name) + ')'
+Name = '.+?' if args.digit else '(' + '|'.join(args.name) + ')'
+Digit = '(' + '|'.join(args.digit) + ')' if args.digit else '\d*?'
 
 crnRegex  = re.compile('<b>\d{5}<\/b>')
 coreRegex = re.compile('^<TD.*?COLSPAN="15" CLASS="detthdr">(.|\s)*?<tr.*valign=', re.M)
@@ -75,23 +68,19 @@ for term in Term:
             try:
                 name = nameRegex.search(components[0]).group()
                 header = "Name: " + clearRegex.sub('', name) + '\n'
-            except:
-                continue
+            except: continue
             if args.show: header += dateRegex.search(components[0]).group() + '\n'
             content = ''
             for detail in components[1:]:
-                try:
-                    crn = crnRegex.search(detail).group().strip('<b></b>')
+                try: crn = crnRegex.search(detail).group().strip('<b></b>')
                 except: continue
                 ctype = typeRegex.search(detail).group()
                 if ctype == 'Lec':
                     weeks = '|'.join(map(lambda week: week.strip('<p class="centeraligntext"></p>'), weekRegex.findall(detail)))
                     printable = len(weeks)
                     if not printable: break
-                else:
-                    weeks = '|'.join(map(lambda week: week.strip('<p class="centeraligntext"></p>'), re.findall('<p class="centeraligntext">[MTWRF]<\/p>', detail))) 
-                try:
-                    time = timeRegex.search(detail).group()
+                else: weeks = '|'.join(map(lambda week: week.strip('<p class="centeraligntext"></p>'), re.findall('<p class="centeraligntext">[MTWRF]<\/p>', detail))) 
+                try: time = timeRegex.search(detail).group()
                 except: time = 'N.A.'
                 if ctype == 'Lec': 
                     pre, post = [int(each) for each in time.split('-')]
@@ -103,5 +92,4 @@ for term in Term:
                 print(header)
                 print('\t'.join(['CRN', 'Type', 'Weeks', 'Time', 'Percentage']))
                 print(content)
-                print('=' * 50)
-    print()
+                print('=' * 50, '\n')
