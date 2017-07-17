@@ -14,8 +14,9 @@ parser.add_argument('-d', '--digit', nargs='*', help='Course Digit (Fuzzy search
 parser.add_argument('-n', '--name', nargs='*', help='Name (Partial search is available; Mobile Computing by default; Cannot search with digit at the same time)')
 parser.add_argument('-f', '--faculty', help='Faculty (Shorthand of faculty name; CSCI by default)')
 parser.add_argument('-s', '--show', action='store_true', help='Show course dates')
-parser.add_argument('-w', '--week', nargs='*', default=['M','T','W','R','F'], help='Week days which courses are available')
+parser.add_argument('-w', '--week', default='MTRWF', help='Week days which courses are available; Example: MWF: Mon, Wed, Fri')
 parser.add_argument('-y', '--year', type=int, help='Year of the timetable (Historical data may be unaccessible)')
+parser.add_argument('-r', '--range', metavar='TIME', default='0:2400', help='''Time range the courses are available. Example: ":1605"=before 16:05, "1605:"=after 16:05, "1505:1605"=between 15:05 and 16:05''')
 args = parser.parse_args()
 
 def openURL(baseURL, term, faculty, page):
@@ -24,9 +25,9 @@ def openURL(baseURL, term, faculty, page):
     sys.exit(0)
 
 encodePage = lambda number: int((number - 1) * 20 + 1)
-encodeWeek = lambda week: "|".join(week)
 encodeYear = lambda year: (year + 1) * 100
 decodeYear = lambda year: int(year / 100) - 1
+encodeTime = lambda time: int(time)
 
 year = encodeYear(args.year or datetime.now().year)
 __FALL__, __WINTER__, __SUMMER__ = year + 10, year + 20, year + 30
@@ -36,7 +37,8 @@ reverseTermMapping = {__FALL__: 'fall', __WINTER__: 'winter', __SUMMER__: 'summe
 termMapping = {**{value: key for key, value in reverseTermMapping.items()}, 'w': __WINTER__, 'f': __FALL__, 's': __SUMMER__}
 Term = [termMapping[args.term.lower()]] if not isinstance(args.term, list) else [termMapping[term.lower()] for term in args.term]
 Facu = (args.faculty or 'CSCI').upper()
-Week = encodeWeek(args.week)
+Week = args.week
+Time = list(map(encodeTime, args.range.split(':')))
 if args.open:
     openURL(baseURL, Term[0], Facu, Page)
 Name = args.name or ['Mobile Computing']
@@ -53,7 +55,7 @@ coreRegex = re.compile('^<TD.*?COLSPAN="15" CLASS="detthdr">(.|\s)*?<tr.*valign=
 nameRegex = re.compile('<b>{faculty}\s{digit}\s.*?{name}.*?<\/b>'.format(faculty=Facu, name=Name, digit=Digit), re.I|re.M)
 typeRegex = re.compile('(Lec|Lab|Tut|WkT|Ths)')
 timeRegex = re.compile('[0-9]{4}\-[0-9]{4}')
-weekRegex = re.compile('<p class="centeraligntext">({week})<\/p>'.format(week=Week))
+weekRegex = re.compile('<p class="centeraligntext">[{week}]<\/p>'.format(week=Week))
 dateRegex = re.compile('\d{2}\-\w{3}\-\d{4}\s\-\s\d{2}\-\w{3}\-\d{4}')
 percRegex = re.compile('(\d{1,2}\.\d{1,2}\%)|(WLIST)|(FULL)')
 emptyRegex = re.compile('<b>{faculty}\s[0-9]*?\s.+?<\/b>'.format(faculty=Facu))
@@ -75,7 +77,7 @@ for term in Term:
                 header = "Name: " + clearRegex.sub('', name) + '\n'
             except:
                 continue
-            if args.show: header += dateRegex.search(components[0]) + '\n'
+            if args.show: header += dateRegex.search(components[0]).group() + '\n'
             content = ''
             for detail in components[1:]:
                 try:
@@ -85,10 +87,16 @@ for term in Term:
                 if ctype == 'Lec':
                     weeks = '|'.join(map(lambda week: week.strip('<p class="centeraligntext"></p>'), weekRegex.findall(detail)))
                     printable = len(weeks)
-                    if len(weeks) == 0: break
+                    if not printable: break
                 else:
                     weeks = '|'.join(map(lambda week: week.strip('<p class="centeraligntext"></p>'), re.findall('<p class="centeraligntext">[MTWRF]<\/p>', detail))) 
-                time = timeRegex.search(detail).group()
+                try:
+                    time = timeRegex.search(detail).group()
+                except: time = 'N.A.'
+                if ctype == 'Lec': 
+                    pre, post = [int(each) for each in time.split('-')]
+                    printable = Time[0] <= pre and post <= Time[1]
+                    if not printable: break
                 percent = percRegex.search(detail).group()
                 content += '\t'.join([crn, ctype, weeks, time, percent]) + '\n'
             if printable:
