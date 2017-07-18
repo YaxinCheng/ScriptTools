@@ -39,7 +39,7 @@ Facu = args.faculty.upper()
 Week = args.week
 if args.range.startswith(':'): Time = list(map(encodeTime, ('0'+args.range).split(':')))
 elif args.range.endswith(':'): Time = list(map(encodeTime, (args.range+'2400').split(':')))
-else: Time = list(map(encodeTime, (args.range+'0').split(':')))
+else: Time = list(map(encodeTime, args.range.split(':')))
 if args.open: openURL(baseURL, Term[0], Facu, Page)
 Name = '({})'.format('|'.join(args.name)) if args.name else '.+?'
 Digit = '({})'.format('|'.join(args.digit)) if args.digit else '\d*?'
