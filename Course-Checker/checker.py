@@ -7,7 +7,7 @@ baseURL = 'https://dalonline.dal.ca/PROD/fysktime.P_DisplaySchedule?s_term={term
 parser = argparse.ArgumentParser(description='Search for the existence of courses')
 parser.add_argument('-o', '--open', action='store_true', help='Open the url in the browser')
 parser.add_argument('-s', '--show', action='store_true', help='Show course dates')
-parser.add_argument('-t', '--term', nargs='*', default=['f', 'w'], help='Term (Available input: winter/fall/w/f; fall and winter by default)')
+parser.add_argument('-t', '--term', nargs='*', default=['f', 'w'], help='Term (Available input: winter/fall/summer/w/f/s; fall and winter by default)')
 parser.add_argument('-d', '--digit', nargs='*', help='Course Digit (Fuzzy search available (regex))')
 parser.add_argument('-n', '--name', nargs='*', help='Name (Partial search is available; Cannot search with digit at the same time)')
 parser.add_argument('-f', '--faculty', help='Faculty (Shorthand of faculty name)')
