@@ -20,7 +20,7 @@ if not (args.faculty and (args.name or args.digit or args.range)):
     sys.exit(0)
 
 def openURL(baseURL, term, faculty, page):
-    webbrowser.open(baseURL.format(term=term, faculty=faculty, page=0))
+    webbrowser.open(baseURL.format(term=term, faculty=faculty, page=1))
     sys.exit(0)
 
 encodePage = lambda number: int((number - 1) * 20 + 1)
@@ -86,7 +86,7 @@ for term in Term:
                     if not printable: break
                 else: weeks = '|'.join(map(lambda week: week.strip('<p class="centeraligntext"></p>'), re.findall('<p class="centeraligntext">[MTWRF]<\/p>', detail))) 
                 try: time = timeRegex.search(detail).group()
-                except: time = 'N.A.'
+                except: time = 'N.A.\t'
                 if ctype == 'Lec': 
                     pre, post = [int(each) for each in time.split('-')]
                     printable = Time[0] <= pre and post <= Time[1]
@@ -95,6 +95,6 @@ for term in Term:
                 content += '\t'.join([crn, ctype, weeks, time, percent]) + '\n'
             if printable:
                 print(header)
-                print('\t'.join(['CRN', 'Type', 'Weeks', 'Time', 'Percentage']))
+                print('\t'.join(['CRN', 'Type', 'Weeks', 'Time', '\tPercentage']))
                 print(content)
                 print('=' * 50, '\n')
