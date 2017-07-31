@@ -9,7 +9,7 @@ parser.add_argument('-o', '--open', action='store_true', help='Open the url in t
 parser.add_argument('-s', '--show', action='store_true', help='Show course dates')
 parser.add_argument('-t', '--term', nargs='*', default=['f', 'w'], help='Term (Available input: winter/fall/summer/w/f/s; fall and winter by default)')
 parser.add_argument('-d', '--digit', nargs='*', help='Course Digit (Fuzzy search available (regex))')
-parser.add_argument('-n', '--name', nargs='*', help='Name (Partial search is available; Cannot search with digit at the same time)')
+parser.add_argument('-n', '--name', nargs='*', help='Name (Partial search is available)')
 parser.add_argument('-f', '--faculty', help='Faculty (Shorthand of faculty name)')
 parser.add_argument('-r', '--range', metavar='TIME', default='0:2400', help='''Time range the courses are available. Example: ":1605"=before 16:05, "1605:"=after 16:05, "1505:1605"=between 15:05 and 16:05''')
 parser.add_argument('-w', '--week', default='MTRWF', help='Week days which courses are available; Example: MWF: Mon, Wed, Fri')
