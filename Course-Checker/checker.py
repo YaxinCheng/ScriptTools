@@ -12,7 +12,7 @@ parser.add_argument('-d', '--digit', nargs='*', help='Course Digit (Fuzzy search
 parser.add_argument('-n', '--name', nargs='*', help='Name (Partial search is available)')
 parser.add_argument('-f', '--faculty', help='Faculty (Shorthand of faculty name)')
 parser.add_argument('-r', '--range', metavar='TIME', default='0:2400', help='''Time range the courses are available. Example: ":1605"=before 16:05, "1605:"=after 16:05, "1505:1605"=between 15:05 and 16:05''')
-parser.add_argument('-w', '--week', default='MTRWF', help='Week days which courses are available; Example: MWF: Mon, Wed, Fri')
+parser.add_argument('-w', '--week', default='MTRWF', help='Week days which courses are available; Example: MWF(Mon, Wed, Fri)')
 parser.add_argument('-y', '--year', type=int, help='Year of the timetable (Historical data may be unaccessible)')
 args = parser.parse_args() 
 if not (args.faculty and (args.name or args.digit or args.range)): 
@@ -36,7 +36,7 @@ reverseTermMapping = {__FALL__: 'fall', __WINTER__: 'winter', __SUMMER__: 'summe
 termMapping = {**{value: key for key, value in reverseTermMapping.items()}, 'w': __WINTER__, 'f': __FALL__, 's': __SUMMER__}
 Term = [termMapping[args.term.lower()]] if not isinstance(args.term, list) else [termMapping[term.lower()] for term in args.term]
 Facu = args.faculty.upper()
-Week = args.week
+Week = args.week.upper()
 if args.range.startswith(':'): Time = list(map(encodeTime, ('0'+args.range).split(':')))
 elif args.range.endswith(':'): Time = list(map(encodeTime, (args.range+'2400').split(':')))
 else: Time = list(map(encodeTime, args.range.split(':')))
