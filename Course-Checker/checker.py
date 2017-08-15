@@ -60,41 +60,41 @@ if Name == '.+?' and Digit == '\d*?': searchingName = '{faculty} between {From} 
 elif Name != '.+?': searchingName = '{name} between {From} and {End}'.format(name=Name, From=Time[0], End=Time[1])
 else: searchingName = '{faculty} {digit} between {From} and {End}'.format(faculty=Facu, digit=Digit, From=Time[0], End=Time[1])
 
-for term in Term:
-    print('Searching {name} in {term} term for {faculty} (Year {year})\n'.format(name=searchingName, term=reverseTermMapping[term], faculty=Facu, year=decodeYear(year)))
-    print('=' * 50)
-    for index, page in enumerate(Page):
-        searchURL = baseURL.format(term=term, faculty=Facu, page=page)
-        source = requests.get(searchURL).text
-        if not emptyRegex.search(source): break
-        for course in coreRegex.finditer(source):
-            printable = True
-            components = splitRegex.split(course.group())
-            try:
-                name = nameRegex.search(components[0]).group()
-                header = "Name: " + clearRegex.sub('', name) + '\n'
-            except: continue
-            if args.show: header += dateRegex.search(components[0]).group() + '\n'
-            content = ''
-            for detail in components[1:]:
-                try: crn = crnRegex.search(detail).group().strip('<b></b>')
+try:
+    for term in Term:
+        print('Searching {name} in {term} term for {faculty} (Year {year})\n'.format(name=searchingName, term=reverseTermMapping[term], faculty=Facu, year=decodeYear(year)))
+        print('=' * 50)
+        for index, page in enumerate(Page):
+            searchURL = baseURL.format(term=term, faculty=Facu, page=page)
+            source = requests.get(searchURL).text
+            if not emptyRegex.search(source): break
+            for course in coreRegex.finditer(source):
+                printable = True
+                components = splitRegex.split(course.group())
+                try:
+                    name = nameRegex.search(components[0]).group()
+                    header = clearRegex.sub('', name) + '\n'
                 except: continue
-                ctype = typeRegex.search(detail).group()
-                if ctype == 'Lec':
-                    weeks = '|'.join(map(lambda week: week.strip('<p class="centeraligntext"></p>'), weekRegex.findall(detail)))
-                    printable = len(weeks)
-                    if not printable: break
-                else: weeks = '|'.join(map(lambda week: week.strip('<p class="centeraligntext"></p>'), re.findall('<p class="centeraligntext">[MTWRF]<\/p>', detail))) 
-                try: time = timeRegex.search(detail).group()
-                except: time = 'N.A.\t'
-                if ctype == 'Lec': 
-                    pre, post = [int(each) for each in time.split('-')]
-                    printable = Time[0] <= pre and post <= Time[1]
-                    if not printable: break
-                percent = percRegex.search(detail).group()
-                content += '\t'.join([crn, ctype, weeks, time, percent]) + '\n'
-            if printable:
-                print(header)
-                print('\t'.join(['CRN', 'Type', 'Weeks', 'Time', '\tPercentage']))
-                print(content)
-                print('=' * 50, '\n')
+                if args.show: header += dateRegex.search(components[0]).group() + '\n'
+                content = ''
+                for detail in components[1:]:
+                    try: crn = crnRegex.search(detail).group().strip('<b></b>')
+                    except: continue
+                    ctype = typeRegex.search(detail).group()
+                    if ctype == 'Lec':
+                        weeks = '|'.join(map(lambda week: week.strip('<p class="centeraligntext"></p>'), weekRegex.findall(detail)))
+                        printable = len(weeks)
+                        if not printable: break
+                    else: weeks = '|'.join(map(lambda week: week.strip('<p class="centeraligntext"></p>'), re.findall('<p class="centeraligntext">[MTWRF]<\/p>', detail))) 
+                    try: time = timeRegex.search(detail).group()
+                    except: time = 'N.A.\t'
+                    if ctype == 'Lec': 
+                        pre, post = [int(each) for each in time.split('-')]
+                        printable = Time[0] <= pre and post <= Time[1]
+                        if not printable: break
+                    percent = percRegex.search(detail).group()
+                    content += '\t'.join([crn, ctype, weeks, time, percent]) + '\n'
+                if printable:
+                    print(header + '\n' + '\t'.join(['CRN', 'Type', 'Weeks', 'Time', '\tPercentage']) + '\n' + content)
+                    print('=' * 50, '\n')
+except KeyboardInterrupt: pass
