@@ -1,5 +1,5 @@
 #!/Users/Yaxin.Cheng@iCloud.com/Developer/venv/bin/python
-import re, argparse, webbrowser, sys
+import re, argparse, webbrowser, sys, os
 import requests
 from datetime import datetime 
 
@@ -35,6 +35,7 @@ encodeTime = lambda time: int(time)
 year = encodeYear(args.year or datetime.now().year)
 __FALL__, __WINTER__, __SUMMER__ = year + 10, year + 20, year + 30
 
+Export = os.fstat(0) != os.fstat(1)# Check if stdin == stdout
 Page = [ encodePage(i) for i in range(1, 8) ]
 reverseTermMapping = {__FALL__: 'fall', __WINTER__: 'winter', __SUMMER__: 'summer'}
 termMapping = {**{value: key for key, value in reverseTermMapping.items()}, 'w': __WINTER__, 'f': __FALL__, 's': __SUMMER__}
@@ -63,8 +64,8 @@ else: searchingName = '{faculty} {digit} between {From} and {End}'.format(facult
 
 try:
     for term in Term:
-        print('Searching {name} in {term} term for {faculty} (Year {year})\n'.format(name=searchingName, term=reverseTermMapping[term], faculty=Facu, year=decodeYear(year)))
-        print('=' * 50)
+        if not Export: print('Searching {name} in {term} term for {faculty} (Year {year})\n'.format(name=searchingName, term=reverseTermMapping[term], faculty=Facu, year=decodeYear(year)))
+        if not Export: print('=' * 50)
         for index, page in enumerate(Page):
             searchURL = baseURL.format(term=term, faculty=Facu, page=page)
             source = requests.get(searchURL).text
@@ -75,12 +76,12 @@ try:
                 try:
                     name = nameRegex.search(components[0]).group()
                     header = clearRegex.sub('', name) + '\n'
-                except: continue
-                if not (term - 30) % 100: header += 'Date: ' + dateRegex.search(components[0]).group() + '\n' # Show dates only in summers
+                except AttributeError: continue
+                if Export or not (term - 30) % 100: header += 'Date: ' + dateRegex.search(components[0]).group() + '\n' # Show dates only in summers
                 content = ''
                 for detail in components[1:]:
                     try: crn = crnRegex.search(detail).group().strip('<b></b>')
-                    except: continue
+                    except AttributeError: continue
                     ctype = typeRegex.search(detail).group()
                     if ctype == 'Lec':
                         weeks = '|'.join(map(lambda week: week.strip('<p class="centeraligntext"></p>'), weeksRegex.findall(detail)))
@@ -89,7 +90,7 @@ try:
                         else: break
                     else: weeks = '|'.join(map(lambda week: week.strip('<p class="centeraligntext"></p>'), re.findall('<p class="centeraligntext">[MTWRF]<\/p>', detail))) 
                     try: time = timeRegex.search(detail).group()
-                    except: time = 'N.A.\t'
+                    except AttributeError: time = 'N.A.\t'
                     if ctype == 'Lec': 
                         if time == 'N.A.\t':
                             printable = Time == (0, 2400) and Week == 'MTWRF'
