@@ -84,7 +84,7 @@ try:
                     ctype = typeRegex.search(detail).group()
                     if ctype == 'Lec':
                         weeks = '|'.join(map(lambda week: week.strip('<p class="centeraligntext"></p>'), weeksRegex.findall(detail)))
-                        printable = len(weeks) or Week != 'MTWRF'
+                        printable = len(weeks) or Week == 'MTWRF'
                         if printable: weeks = '|'.join(map(lambda week: week.strip('<p class="centeraligntext"></p>'), weekRegex.findall(detail)))
                         else: break
                     else: weeks = '|'.join(map(lambda week: week.strip('<p class="centeraligntext"></p>'), re.findall('<p class="centeraligntext">[MTWRF]<\/p>', detail))) 
@@ -92,7 +92,7 @@ try:
                     except: time = 'N.A.\t'
                     if ctype == 'Lec': 
                         if time == 'N.A.\t':
-                            printable = Time == [0, 2400] and Week == 'MTWRF'
+                            printable = Time == (0, 2400) and Week == 'MTWRF'
                         else:
                             pre, post = [int(each) for each in time.split('-')]
                             printable = Time[0] <= pre and post <= Time[1]
