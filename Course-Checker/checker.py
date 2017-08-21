@@ -10,8 +10,7 @@ parser.add_argument('-t', '--term', nargs='*', default=['f', 'w'], help='Term (A
 parser.add_argument('-d', '--digit', nargs='*', help='Course Digit (Fuzzy search available (regex))')
 parser.add_argument('-n', '--name', nargs='*', help='Name (Partial search is available)')
 parser.add_argument('-f', '--faculty', help='Faculty (Shorthand of faculty name)')
-parser.add_argument('-r', '--range', metavar='TIME', default='0:2400', help='''Time range the courses are available. Example: ":1605"=before 16:05, "1605:"=after 16:05, "1505:1605"=between 15:05 and 16:05''')
-parser.add_argument('-w', '--week', default='MTRWF', help='Week days which courses are available; Example: MWF(Mon, Wed, Fri)')
+parser.add_argument('-r', '--range', metavar='TIME', default='MTWRF, 0:2400', help='''Time range the courses are available. Example: "MR, :1605"=Monday& Thursday, before 16:05, "M, 1605:"=Monday after 16:05, "1505:1605"=Any day between 15:05 and 16:05''')
 parser.add_argument('-y', '--year', type=int, help='Year of the timetable (Historical data may be unaccessible)')
 args = parser.parse_args() 
 if not (args.faculty and (args.name or args.digit or args.range)): 
@@ -21,6 +20,13 @@ if not (args.faculty and (args.name or args.digit or args.range)):
 def openURL(baseURL, term, faculty, page):
     webbrowser.open(baseURL.format(term=term, faculty=faculty, page=1))
     sys.exit(0)
+
+def searchByTime(timeRange):
+    upperTime = timeRange.upper()
+    week = ''.join(re.findall('[MTWRF]', upperTime)) or 'MWTRF'
+    try: Time = (int(re.search('(\d*):', upperTime).groups()[0] or 0), int(re.search(':(\d*)', upperTime).groups()[0] or 2400),)
+    except: Time = (0, 2400)
+    return week, Time
 
 encodePage = lambda number: int((number - 1) * 20 + 1)
 encodeYear = lambda year: (year + 1) * 100
@@ -34,22 +40,20 @@ reverseTermMapping = {__FALL__: 'fall', __WINTER__: 'winter', __SUMMER__: 'summe
 termMapping = {**{value: key for key, value in reverseTermMapping.items()}, 'w': __WINTER__, 'f': __FALL__, 's': __SUMMER__}
 Term = [termMapping[args.term.lower()]] if not isinstance(args.term, list) else [termMapping[term.lower()] for term in args.term]
 Facu = args.faculty.upper()
-Week = args.week.upper()
-if args.range.startswith(':'): Time = list(map(encodeTime, ('0'+args.range).split(':')))
-elif args.range.endswith(':'): Time = list(map(encodeTime, (args.range+'2400').split(':')))
-else: Time = list(map(encodeTime, args.range.split(':')))
 if args.open: openURL(baseURL, Term[0], Facu, Page)
 Name = '({})'.format('|'.join(args.name)) if args.name else '.+?'
 Digit = '({})'.format('|'.join(args.digit)) if args.digit else '\d*?'
+Week, Time = searchByTime(args.range)
 
 crnRegex  = re.compile('<b>\d{5}<\/b>')
 coreRegex = re.compile('^<TD.*?COLSPAN="15" CLASS="detthdr">(.|\s)*?<tr.*valign=', re.M)
 nameRegex = re.compile('<b>{faculty}\s{digit}\s.*?{name}.*?<\/b>'.format(faculty=Facu, name=Name, digit=Digit), re.I|re.M)
 typeRegex = re.compile('(Lec|Lab|Tut|WkT|Ths)')
 timeRegex = re.compile('[0-9]{4}\-[0-9]{4}')
-weekRegex = re.compile('<p class="centeraligntext">[{week}]<\/p>'.format(week=Week))
 dateRegex = re.compile('\d{2}\-\w{3}\-\d{4}\s\-\s\d{2}\-\w{3}\-\d{4}')
 percRegex = re.compile('(\d{1,2}\.\d{1,2}\%)|(WLIST)|(FULL)')
+weekRegex = re.compile('<p class="centeraligntext">[MTWRF]<\/p>')
+weeksRegex = re.compile('<p class="centeraligntext">[{week}]<\/p>'.format(week=Week))
 emptyRegex = re.compile('<b>{faculty}\s[0-9]*?\s.+?<\/b>'.format(faculty=Facu))
 clearRegex = re.compile('(<b>)|(<\/b>)')
 splitRegex = re.compile('<\/tr>\s*?<tr>')
@@ -79,9 +83,10 @@ try:
                     except: continue
                     ctype = typeRegex.search(detail).group()
                     if ctype == 'Lec':
-                        weeks = '|'.join(map(lambda week: week.strip('<p class="centeraligntext"></p>'), weekRegex.findall(detail)))
+                        weeks = '|'.join(map(lambda week: week.strip('<p class="centeraligntext"></p>'), weeksRegex.findall(detail)))
                         printable = len(weeks) or Week != 'MTWRF'
-                        if not printable: break
+                        if printable: weeks = '|'.join(map(lambda week: week.strip('<p class="centeraligntext"></p>'), weekRegex.findall(detail)))
+                        else: break
                     else: weeks = '|'.join(map(lambda week: week.strip('<p class="centeraligntext"></p>'), re.findall('<p class="centeraligntext">[MTWRF]<\/p>', detail))) 
                     try: time = timeRegex.search(detail).group()
                     except: time = 'N.A.\t'
