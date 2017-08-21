@@ -64,8 +64,7 @@ else: searchingName = '{faculty} {digit} between {From} and {End}'.format(facult
 
 try:
     for term in Term:
-        if not Export: print('Searching {name} in {term} term for {faculty} (Year {year})\n'.format(name=searchingName, term=reverseTermMapping[term], faculty=Facu, year=decodeYear(year)))
-        if not Export: print('=' * 50)
+        if not Export: print('Searching {name} in {term} term for {faculty} (Year {year})\n'.format(name=searchingName, term=reverseTermMapping[term], faculty=Facu, year=decodeYear(year)), '\n' + '=' * 50)
         for index, page in enumerate(Page):
             searchURL = baseURL.format(term=term, faculty=Facu, page=page)
             source = requests.get(searchURL).text
