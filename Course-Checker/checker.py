@@ -53,8 +53,8 @@ typeRegex = re.compile('(Lec|Lab|Tut|WkT|Ths)')
 timeRegex = re.compile('[0-9]{4}\-[0-9]{4}')
 dateRegex = re.compile('\d{2}\-\w{3}\-\d{4}\s\-\s\d{2}\-\w{3}\-\d{4}')
 percRegex = re.compile('(\d{1,2}\.\d{1,2}\%)|(WLIST)|(FULL)')
-weekRegex = re.compile('<p class="centeraligntext">[MTWRF]<\/p>')
-weeksRegex = re.compile('<p class="centeraligntext">[{week}]<\/p>'.format(week=Week))
+weekRegex = re.compile('<p class="centeraligntext">(&nbsp;<br />)?[MTWRF](<br />&nbsp;)?<\/p>')
+weeksRegex = re.compile('<p class="centeraligntext">(&nbsp;<br />)?[{week}](<br />&nbsp;)?<\/p>'.format(week=Week))
 emptyRegex = re.compile('<b>{faculty}\s[0-9]*?\s.+?<\/b>'.format(faculty=Facu))
 clearRegex = re.compile('(<b>)|(<\/b>)')
 splitRegex = re.compile('<\/tr>\s*?<tr>')
@@ -76,18 +76,19 @@ try:
                     name = nameRegex.search(components[0]).group()
                     header = clearRegex.sub('', name) + '\n'
                 except AttributeError: continue
-                if Export or not (term - 30) % 100: header += 'Date: ' + dateRegex.search(components[0]).group() + '\n' # Show dates only in summers
+                if Export or not (term - 30) % 100: header += dateRegex.search(components[0]).group() + '\n' # Show dates only in summers
                 content = ''
                 for detail in components[1:]:
                     try: crn = crnRegex.search(detail).group().strip('<b></b>')
                     except AttributeError: continue
                     ctype = typeRegex.search(detail).group()
+                    stripPart = '<p class="centeraligntext"></p>(<br />&nbsp;)(&nbsp;<br />)'
                     if ctype == 'Lec':
-                        weeks = '|'.join(map(lambda week: week.strip('<p class="centeraligntext"></p>'), weeksRegex.findall(detail)))
+                        weeks = ''.join(map(lambda week: week.group().strip(stripPart), weeksRegex.finditer(detail)))
                         printable = len(weeks) or Week == 'MTWRF'
-                        if printable: weeks = '|'.join(map(lambda week: week.strip('<p class="centeraligntext"></p>'), weekRegex.findall(detail)))
+                        if printable: weeks = ''.join(map(lambda week: week.group().strip(stripPart), weekRegex.finditer(detail)))
                         else: break
-                    else: weeks = '|'.join(map(lambda week: week.strip('<p class="centeraligntext"></p>'), re.findall('<p class="centeraligntext">[MTWRF]<\/p>', detail))) 
+                    else: weeks = ''.join(map(lambda week: week.group().strip(stripPart), weekRegex.finditer(detail))) 
                     try: time = timeRegex.search(detail).group()
                     except AttributeError: time = 'N.A.\t'
                     if ctype == 'Lec': 
