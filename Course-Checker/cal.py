@@ -9,7 +9,7 @@ args = parser.parse_args()
 
 nameRegex = re.compile('[A-Z]{4} \d{4} .+')
 dateRegex = re.compile('\d{2}\-\w{3}\-\d{4}\s\-\s\d{2}\-\w{3}\-\d{4}')
-contRegex = re.compile('\d{5}\s*?(Lec|Lab|Tut|WkT|Ths)\s*?[MTWRF]+\s*?\d{4}-\d{4}')
+contRegex = re.compile('\d{5}\s*?(Lec|Lab|Tut|WkT|Ths)\s*?[MTWRF]+\s*?\d{4}-\d{4}\s*?.*')
 
 def dateRange(begin, end):
     current = copy.copy(begin)
@@ -19,8 +19,9 @@ def dateRange(begin, end):
 
 class Course:
     def __init__(self, name, content, pre, post):
-        (_, type, weeks, time) = content.split('\t')
-        self.name = name if type == 'Lec' else name + ' ' + type
+        (_, type, weeks, time, _, _, location) = content.split('\t')
+        self.name = name if type == 'Lec' else type + '-' + name
+        self.location = location
         weeksMap = {'M': 0, 'T': 1, 'W': 2, 'R': 3, 'F': 4}
         self.weeks = set(map(lambda w: weeksMap[w], weeks))
         self.begin, self.end = [int(element) for element in time.split('-')]
@@ -28,7 +29,7 @@ class Course:
 
     def toEvent(self, date):
         hfxZone = pytz.timezone('America/Halifax')
-        e = Event(name=self.name)
+        e = Event(name=self.name, location=self.location)
         e.begin = hfxZone.localize(date.replace(hour=int(self.begin/100), minute=int(self.begin%100), second=0))
         e.end   = hfxZone.localize(date.replace(hour=int(self.end / 100), minute=int(self.end % 100), second=0))
         return e

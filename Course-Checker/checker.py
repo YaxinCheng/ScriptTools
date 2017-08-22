@@ -58,13 +58,14 @@ weeksRegex = re.compile('<p class="centeraligntext">(&nbsp;<br />)?[{week}](<br 
 emptyRegex = re.compile('<b>{faculty}\s[0-9]*?\s.+?<\/b>'.format(faculty=Facu))
 clearRegex = re.compile('(<b>)|(<\/b>)')
 splitRegex = re.compile('<\/tr>\s*?<tr>')
+locatRegex = re.compile('<td CLASS="dett(l|b|t|w|s)"NOWRAP>(([a-zA-Z]|\s|\&|\-)*?\d*?)<\/td>')
 if Name == '.+?' and Digit == '\d*?': searchingName = '{faculty} between {From} and {End}'.format(faculty=Facu, From=Time[0], End=Time[1])
 elif Name != '.+?': searchingName = '{name} between {From} and {End}'.format(name=Name, From=Time[0], End=Time[1])
 else: searchingName = '{faculty} {digit} between {From} and {End}'.format(faculty=Facu, digit=Digit, From=Time[0], End=Time[1])
 
 try:
     for term in Term:
-        if not Export: print('Searching {name} in {term} term for {faculty} (Year {year})\n'.format(name=searchingName, term=reverseTermMapping[term], faculty=Facu, year=decodeYear(year)), '\n' + '=' * 50)
+        if not Export: print('Searching {name} in {term} term for {faculty} (Year {year})\n'.format(name=searchingName, term=reverseTermMapping[term], faculty=Facu, year=decodeYear(year)), '\n' + '=' * 90)
         for index, page in enumerate(Page):
             searchURL = baseURL.format(term=term, faculty=Facu, page=page)
             source = requests.get(searchURL).text
@@ -81,6 +82,7 @@ try:
                 for detail in components[1:]:
                     try: crn = crnRegex.search(detail).group().strip('<b></b>')
                     except AttributeError: continue
+                    location = locatRegex.search(detail).groups()[1]
                     ctype = typeRegex.search(detail).group()
                     stripPart = '<p class="centeraligntext"></p>(<br />&nbsp;)(&nbsp;<br />)'
                     if ctype == 'Lec':
@@ -99,8 +101,8 @@ try:
                             printable = Time[0] <= pre and post <= Time[1]
                         if not printable: break
                     percent = percRegex.search(detail).group()
-                    content += '\t'.join([crn, ctype, weeks, time, percent]) + '\n'
+                    content += '\t'.join([crn, ctype, weeks, time, percent, '\t' + location]) + '\n'
                 if printable:
-                    print(header + '\n' + '\t'.join(['CRN', 'Type', 'Weeks', 'Time', '\tPercentage']) + '\n' + content)
-                    print('=' * 50, '\n')
+                    print(header + '\n' + '\t'.join(['CRN', 'Type', 'Weeks', 'Time', '\tPercentage', 'Location']) + '\n' + content)
+                    print('=' * 90, '\n')
 except KeyboardInterrupt: pass
