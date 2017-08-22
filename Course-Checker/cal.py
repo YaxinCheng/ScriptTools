@@ -27,22 +27,15 @@ class Course:
         self.pre, self.post = pre, post
 
     def toEvent(self, date):
-        global hfxZone
+        hfxZone = pytz.timezone('America/Halifax')
         e = Event(name=self.name)
-        e.begin = date.replace(hour=int(self.begin/100), minute=int(self.begin%100), second=0)
-        e.end   = date.replace(hour=int(self.end / 100), minute=int(self.end % 100), second=0)
+        e.begin = hfxZone.localize(date.replace(hour=int(self.begin/100), minute=int(self.begin%100), second=0))
+        e.end   = hfxZone.localize(date.replace(hour=int(self.end / 100), minute=int(self.end % 100), second=0))
         return e
 
-    def __hash__(self):
-        return hash(self.name)
-    
-    def __repr__(self):
-        return self.name + '\n' + str(self.begin) + '\t' + str(self.end)
-
-courseMapping = [set() for _ in range(5)]
+courseMapping = [[] for _ in range(5)]
 minDate = None
 maxDate = None
-hfxZone = pytz.timezone('America/Halifax')
 
 with open(args.file) as inFile:
     calendar = Calendar()
@@ -51,14 +44,14 @@ with open(args.file) as inFile:
             name = nameRegex.match(piece).group()
         elif dateRegex.match(piece) is not None:
             date = dateRegex.match(piece).group()
-            pre, post = [hfxZone.localize(datetime.strptime(each.strip(), '%d-%b-%Y')) for each in date.split(' - ')]
+            pre, post = [datetime.strptime(each.strip(), '%d-%b-%Y') for each in date.split(' - ')]
             if minDate is None or minDate > pre:  minDate = pre
             if maxDate is None or maxDate < post: maxDate = post
         elif contRegex.match(piece) is not None:
             content = contRegex.match(piece).group()
             try: course = Course(name, content, pre, post)
             except ValueError: continue
-            for week in course.weeks: courseMapping[week].add(course)
+            for week in course.weeks: courseMapping[week].append(course)
 
 calendar = Calendar()
 for date in dateRange(minDate, maxDate):
@@ -67,9 +60,4 @@ for date in dateRange(minDate, maxDate):
     events = [course.toEvent(date) for course in courses if course.pre <= date and course.post > date]
     calendar.events += events
 
-#for index, each in enumerate(courseMapping):
-#    print('weekdays: ', index)
-#    print(each)
-#    print()
-
-with open('dal.ics', 'w') as f: f.writelines(calendar)
+with open('Dalhousie.ics', 'w') as f: f.writelines(calendar)
