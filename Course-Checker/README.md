@@ -6,6 +6,8 @@
 ## Requirements
 * Python3
 * See the requirements.txt
+## Tech
+* Regex purely
 ## Examples
 - Search by names: checker.py -f csci -t winter -n 'mobile computing'
 - Search by number:checker.py -f math -t fall -d 3119 2080
@@ -13,4 +15,5 @@
 - Fuzzy search all CS courses with "computing": checker.py -f csci -t f w -n computing
 - Search by all CS courses after 10AM on Mon, Wed, and Fri: checker.py -f csci -t f w -r MWF,1000:
 - Search by all CS courses between 10AM and 2PM on Mon, Wed, and Fri: checker.py -f csci -t f w -r MWF,1000:1400
+- Export search result to file: checker.py -f csci -t f -r MWF,1000:1400 > filename.txt
 - Convert exported file to ics: cal.py filename.txt

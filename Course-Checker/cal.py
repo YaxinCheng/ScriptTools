@@ -3,8 +3,9 @@ import sys, argparse, re, pytz, copy
 from datetime import datetime, timedelta
 from ics import Calendar, Event
 
-parser = argparse.ArgumentParser(description='Convert file to ics')
-parser.add_argument('file', help='File location')
+parser = argparse.ArgumentParser(description='Convert course file to ics')
+parser.add_argument('FILE', help='Course file needs to be converted')
+parser.add_argument('-o', '--output', metavar='FILE', default='Dalhousie', help='Output file name (Dalhousie.ics by default)')
 args = parser.parse_args()
 
 nameRegex = re.compile('[A-Z]{4} \d{4} .+')
@@ -38,7 +39,7 @@ courseMapping = [[] for _ in range(5)]
 minDate = None
 maxDate = None
 
-with open(args.file) as inFile:
+with open(args.FILE) as inFile:
     calendar = Calendar()
     for piece in inFile.readlines():
         if nameRegex.match(piece) is not None:
@@ -61,4 +62,5 @@ for date in dateRange(minDate, maxDate):
     events = [course.toEvent(date) for course in courses if course.pre <= date and course.post > date]
     calendar.events += events
 
-with open('Dalhousie.ics', 'w') as f: f.writelines(calendar)
+fileName = args.output.replace('.ics', '') + '.ics'
+with open(fileName, 'w') as f: f.writelines(calendar)
