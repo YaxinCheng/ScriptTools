@@ -11,7 +11,7 @@ parser.add_argument('-d', '--digit', nargs='*', help='Course Digit (Fuzzy search
 parser.add_argument('-n', '--name', nargs='*', help='Name (Partial search is available)')
 parser.add_argument('-f', '--faculty', help='Faculty (Shorthand of faculty name)')
 parser.add_argument('-r', '--range', metavar='TIME', default='MTWRF, 0:2400', help='''Time range the courses are available. Example: "MR, :1605"=Monday& Thursday, before 16:05, "M, 1605:"=Monday after 16:05, "1505:1605"=Any day between 15:05 and 16:05''')
-parser.add_argument('-y', '--year', type=int, help='Year of the timetable (Historical data may be unaccessible)')
+parser.add_argument('-y', '--year', type=int, help='Year of the timetable (Must be in format yyyy; Historical data may be unaccessible)')
 args = parser.parse_args() 
 if not (args.faculty and (args.name or args.digit or args.range)): 
     parser.print_help()
@@ -46,19 +46,18 @@ Name = '({})'.format('|'.join(args.name)) if args.name else '.+?'
 Digit = '({})'.format('|'.join(args.digit)) if args.digit else '\d*?'
 Week, Time = searchByTime(args.range)
 
-crnRegex  = re.compile('<b>\d{5}<\/b>')
+crnRegex  = re.compile('<b>(\d{5})<\/b>')
 coreRegex = re.compile('^<TD.*?COLSPAN="15" CLASS="detthdr">(.|\s)*?<tr.*valign=', re.M)
-nameRegex = re.compile('<b>{faculty}\s{digit}\s.*?{name}.*?<\/b>'.format(faculty=Facu, name=Name, digit=Digit), re.I|re.M)
+nameRegex = re.compile('<b>({faculty}\s{digit}\s.*?{name}.*?)<\/b>'.format(faculty=Facu, name=Name, digit=Digit), re.I|re.M)
 typeRegex = re.compile('(Lec|Lab|Tut|WkT|Ths)')
 timeRegex = re.compile('[0-9]{4}\-[0-9]{4}')
 dateRegex = re.compile('\d{2}\-\w{3}\-\d{4}\s\-\s\d{2}\-\w{3}\-\d{4}')
 percRegex = re.compile('(\d{1,2}\.\d{1,2}\%)|(WLIST)|(FULL)')
-weekRegex = re.compile('<p class="centeraligntext">(&nbsp;<br />)?[MTWRF](<br />&nbsp;)?<\/p>')
-weeksRegex = re.compile('<p class="centeraligntext">(&nbsp;<br />)?[{week}](<br />&nbsp;)?<\/p>'.format(week=Week))
+weekRegex = re.compile('<p class="centeraligntext">(&nbsp;<br />)?([MTWRF])(<br />&nbsp;)?<\/p>')
+weeksRegex = re.compile('<p class="centeraligntext">(&nbsp;<br />)?([{week}])(<br />&nbsp;)?<\/p>'.format(week=Week))
 emptyRegex = re.compile('<b>{faculty}\s[0-9]*?\s.+?<\/b>'.format(faculty=Facu))
-clearRegex = re.compile('(<b>)|(<\/b>)')
 splitRegex = re.compile('<\/tr>\s*?<tr>')
-locatRegex = re.compile('<td CLASS="dett(l|b|t|w|s)"NOWRAP>(([a-zA-Z]|\s|\&|\-)*?\d*?)<\/td>')
+locatRegex = re.compile('<td CLASS="dett(l|b|t|w|s)"NOWRAP>(([a-zA-Z]|\s|\&|\-)*?\d*?(<br \/>([a-zA-Z]|\s|\&|\-)*?\d*?)?)<\/td>')
 if Name == '.+?' and Digit == '\d*?': searchingName = '{faculty} between {From} and {End}'.format(faculty=Facu, From=Time[0], End=Time[1])
 elif Name != '.+?': searchingName = '{name} between {From} and {End}'.format(name=Name, From=Time[0], End=Time[1])
 else: searchingName = '{faculty} {digit} between {From} and {End}'.format(faculty=Facu, digit=Digit, From=Time[0], End=Time[1])
@@ -73,24 +72,22 @@ try:
             for course in coreRegex.finditer(source):
                 printable = True
                 components = splitRegex.split(course.group())
-                try:
-                    name = nameRegex.search(components[0]).group()
-                    header = clearRegex.sub('', name) + '\n'
+                try: header = nameRegex.search(components[0]).groups()[0] + '\n'
                 except AttributeError: continue
-                if Export or not (term - 30) % 100: header += dateRegex.search(components[0]).group() + '\n' # Show dates only in summers
+                if Export or (term - 30) % 100 == 0: header += dateRegex.search(components[0]).group() + '\n' # Show dates only in summers
                 content = ''
                 for detail in components[1:]:
-                    try: crn = crnRegex.search(detail).group().strip('<b></b>')
+                    try: crn = crnRegex.search(detail).groups()[0]
                     except AttributeError: continue
                     location = locatRegex.search(detail).groups()[1]
+                    if '<br />' in location: location = location.replace('<br />', ' & ')
                     ctype = typeRegex.search(detail).group()
-                    stripPart = '<p class="centeraligntext"></p>(<br />&nbsp;)(&nbsp;<br />)'
+                    weekProcessor = lambda chunk: ''.join(map(lambda week: week.groups()[1], chunk))
                     if ctype == 'Lec':
-                        weeks = ''.join(map(lambda week: week.group().strip(stripPart), weeksRegex.finditer(detail)))
+                        weeks = weekProcessor(weeksRegex.finditer(detail))
                         printable = len(weeks) or Week == 'MTWRF'
-                        if printable: weeks = ''.join(map(lambda week: week.group().strip(stripPart), weekRegex.finditer(detail)))
-                        else: break
-                    else: weeks = ''.join(map(lambda week: week.group().strip(stripPart), weekRegex.finditer(detail))) 
+                        if not printable: break
+                    weeks = weekProcessor(weekRegex.finditer(detail))
                     try: time = timeRegex.search(detail).group()
                     except AttributeError: time = 'N.A.\t'
                     if ctype == 'Lec': 
