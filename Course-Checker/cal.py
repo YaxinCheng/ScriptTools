@@ -1,5 +1,5 @@
 #!/Users/Yaxin.Cheng@iCloud.com/Developer/venv/bin/python
-import sys, argparse, re, pytz, copy
+import sys, argparse, re, pytz, copy, os
 from datetime import datetime, timedelta
 from ics import Calendar, Event
 
@@ -40,7 +40,6 @@ minDate = None
 maxDate = None
 
 with open(args.FILE) as inFile:
-    calendar = Calendar()
     for piece in inFile.readlines():
         if nameRegex.match(piece) is not None:
             name = nameRegex.match(piece).group()
@@ -62,5 +61,9 @@ for date in dateRange(minDate, maxDate):
     events = [course.toEvent(date) for course in courses if course.pre <= date and course.post > date]
     calendar.events += events
 
-fileName = args.output.replace('.ics', '') + '.ics'
-with open(fileName, 'w') as f: f.writelines(calendar)
+Export = os.fstat(0) != os.fstat(1)
+fileName = args.output if args.output.endswith('.ics') else args.output + '.ics'
+if Export:
+    print(calendar)
+else:
+    with open(fileName, 'w') as f: f.writelines(calendar)

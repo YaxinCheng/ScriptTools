@@ -29,10 +29,9 @@ def searchByTime(timeRange):
     return week, Time
 
 encodePage = lambda number: int((number - 1) * 20 + 1)
-encodeYear = lambda year: (year + 1) * 100
 decodeYear = lambda year: int(year / 100) - 1
-encodeTime = lambda time: int(time)
-year = encodeYear(args.year or datetime.now().year)
+weekProcessor = lambda chunk: ''.join(map(lambda week: week.groups()[1], chunk))
+year = ((args.year or datetime.now().year) + 1) * 100
 __FALL__, __WINTER__, __SUMMER__ = year + 10, year + 20, year + 30
 
 Export = os.fstat(0) != os.fstat(1)# Check if stdin == stdout
@@ -58,13 +57,13 @@ weeksRegex = re.compile('<p class="centeraligntext">(&nbsp;<br />)?([{week}])(<b
 emptyRegex = re.compile('<b>{faculty}\s[0-9]*?\s.+?<\/b>'.format(faculty=Facu))
 splitRegex = re.compile('<\/tr>\s*?<tr>')
 locatRegex = re.compile('<td CLASS="dett(l|b|t|w|s)"NOWRAP>(([a-zA-Z]|\s|\&|\-)*?\d*?(<br \/>([a-zA-Z]|\s|\&|\-)*?\d*?)?)<\/td>')
-if Name == '.+?' and Digit == '\d*?': searchingName = '{faculty} between {From} and {End}'.format(faculty=Facu, From=Time[0], End=Time[1])
-elif Name != '.+?': searchingName = '{name} between {From} and {End}'.format(name=Name, From=Time[0], End=Time[1])
-else: searchingName = '{faculty} {digit} between {From} and {End}'.format(faculty=Facu, digit=Digit, From=Time[0], End=Time[1])
+if Name == '.+?' and Digit == '\d*?': searchingName = '{faculty} in {Week} between {From} and {End}'.format(faculty=Facu, Week=Week, From=Time[0], End=Time[1])
+elif Name != '.+?': searchingName = '{name} in {Week} between {From} and {End}'.format(name=Name, Week=Week, From=Time[0], End=Time[1])
+else: searchingName = '{faculty} {digit} in {Week} between {From} and {End}'.format(faculty=Facu, digit=Digit, Week=Week, From=Time[0], End=Time[1])
 
 try:
     for term in Term:
-        if not Export: print('Searching {name} in {term} term for {faculty} (Year {year})\n'.format(name=searchingName, term=reverseTermMapping[term], faculty=Facu, year=decodeYear(year)), '\n' + '=' * 90)
+        if not Export: print('{name} in {term} term for {faculty} (Year {year})\n'.format(name=searchingName, term=reverseTermMapping[term], faculty=Facu, year=decodeYear(year)), '\n' + '=' * 90)
         for index, page in enumerate(Page):
             searchURL = baseURL.format(term=term, faculty=Facu, page=page)
             source = requests.get(searchURL).text
@@ -82,7 +81,6 @@ try:
                     location = locatRegex.search(detail).groups()[1]
                     if '<br />' in location: location = location.replace('<br />', ' & ')
                     ctype = typeRegex.search(detail).group()
-                    weekProcessor = lambda chunk: ''.join(map(lambda week: week.groups()[1], chunk))
                     if ctype == 'Lec':
                         weeks = weekProcessor(weeksRegex.finditer(detail))
                         printable = len(weeks) or Week == 'MTWRF'
@@ -91,15 +89,12 @@ try:
                     try: time = timeRegex.search(detail).group()
                     except AttributeError: time = 'N.A.\t'
                     if ctype == 'Lec': 
-                        if time == 'N.A.\t':
-                            printable = Time == (0, 2400) and Week == 'MTWRF'
+                        if time == 'N.A.\t': printable = Time == (0, 2400) and Week == 'MTWRF'
                         else:
                             pre, post = [int(each) for each in time.split('-')]
                             printable = Time[0] <= pre and post <= Time[1]
                         if not printable: break
                     percent = percRegex.search(detail).group()
                     content += '\t'.join([crn, ctype, weeks, time, percent, '\t' + location]) + '\n'
-                if printable:
-                    print(header + '\n' + '\t'.join(['CRN', 'Type', 'Weeks', 'Time', '\tPercentage', 'Location']) + '\n' + content)
-                    print('=' * 90, '\n')
+                if printable: print(header + '\n' + '\t'.join(['CRN', 'Type', 'Weeks', 'Time', '\tPercentage', 'Location']) + '\n' + content + '\n' + '=' * 90, '\n')
 except KeyboardInterrupt: pass
