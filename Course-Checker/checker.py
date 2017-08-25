@@ -53,17 +53,17 @@ timeRegex = re.compile('[0-9]{4}\-[0-9]{4}')
 dateRegex = re.compile('\d{2}\-\w{3}\-\d{4}\s\-\s\d{2}\-\w{3}\-\d{4}')
 percRegex = re.compile('(\d{1,2}\.\d{1,2}\%)|(WLIST)|(FULL)')
 weekRegex = re.compile('<p class="centeraligntext">(&nbsp;<br />)?([MTWRF])(<br />&nbsp;)?<\/p>')
-weeksRegex = re.compile('<p class="centeraligntext">(&nbsp;<br />)?([{week}])(<br />&nbsp;)?<\/p>'.format(week=Week))
+weekFRegex = re.compile('<p class="centeraligntext">(&nbsp;<br />)?([{week}])(<br />&nbsp;)?<\/p>'.format(week=Week))
 emptyRegex = re.compile('<b>{faculty}\s[0-9]*?\s.+?<\/b>'.format(faculty=Facu))
 splitRegex = re.compile('<\/tr>\s*?<tr>')
-locatRegex = re.compile('<td CLASS="dett(l|b|t|w|s)"NOWRAP>(([a-zA-Z]|\s|\&|\-)*?\d*?(<br \/>([a-zA-Z]|\s|\&|\-)*?\d*?)?)<\/td>')
+locatRegex = re.compile('<td CLASS="dett[lbtws]"NOWRAP>(([a-zA-Z]|\s|\&|\-)*?\d*?(<br \/>([a-zA-Z]|\s|\&|\-)*?\d*?)?)<\/td>')
 if Name == '.+?' and Digit == '\d*?': searchingName = '{faculty} in {Week} between {From} and {End}'.format(faculty=Facu, Week=Week, From=Time[0], End=Time[1])
 elif Name != '.+?': searchingName = '{name} in {Week} between {From} and {End}'.format(name=Name, Week=Week, From=Time[0], End=Time[1])
 else: searchingName = '{faculty} {digit} in {Week} between {From} and {End}'.format(faculty=Facu, digit=Digit, Week=Week, From=Time[0], End=Time[1])
 
 try:
     for term in Term:
-        if not Export: print('{name} in {term} term for {faculty} (Year {year})\n'.format(name=searchingName, term=reverseTermMapping[term], faculty=Facu, year=decodeYear(year)), '\n' + '=' * 90)
+        if not Export: print('\x1b[0;30;47m{name} in {term} term for {faculty} (Year {year})\x1b[0m\n'.format(name=searchingName, term=reverseTermMapping[term], faculty=Facu, year=decodeYear(year)), '\n' + '=' * 90)
         for index, page in enumerate(Page):
             searchURL = baseURL.format(term=term, faculty=Facu, page=page)
             source = requests.get(searchURL).text
@@ -71,18 +71,18 @@ try:
             for course in coreRegex.finditer(source):
                 printable = True
                 components = splitRegex.split(course.group())
-                try: header = nameRegex.search(components[0]).groups()[0] + '\n'
+                try: header = nameRegex.search(components[0]).groups()[0]
                 except AttributeError: continue
                 if Export or (term - 30) % 100 == 0: header += dateRegex.search(components[0]).group() + '\n' # Show dates only in summers
                 content = ''
                 for detail in components[1:]:
                     try: crn = crnRegex.search(detail).groups()[0]
                     except AttributeError: continue
-                    location = locatRegex.search(detail).groups()[1]
+                    location = locatRegex.search(detail).groups()[0].strip()
                     if '<br />' in location: location = location.replace('<br />', ' & ')
                     ctype = typeRegex.search(detail).group()
                     if ctype == 'Lec':
-                        weeks = weekProcessor(weeksRegex.finditer(detail))
+                        weeks = weekProcessor(weekFRegex.finditer(detail))
                         printable = len(weeks) or Week == 'MTWRF'
                         if not printable: break
                     weeks = weekProcessor(weekRegex.finditer(detail))
