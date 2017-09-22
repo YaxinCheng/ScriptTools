@@ -1,4 +1,7 @@
 # Course Checker
+
+## Due to some updates to the Dal Academic Table, this script cannot find the proper location and time for now. I will update it to fit the new updates.
+
 ## Functionalities
 1. Search courses in different faculties, terms, and years by their name(fuzzy), number(fuzzy), and course time
 2. Print the information on the screen or export to a file
