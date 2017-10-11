@@ -1,4 +1,4 @@
-#!/Users/Yaxin.Cheng@iCloud.com/Developer/venv/bin/python
+#!/usr/local/bin/python3
 import re, argparse, webbrowser, sys, os
 import requests
 from datetime import datetime 
@@ -52,14 +52,15 @@ typeRegex = re.compile('(Lec|Lab|Tut|WkT|Ths)')
 timeRegex = re.compile('[0-9]{4}\-[0-9]{4}')
 dateRegex = re.compile('\d{2}\-\w{3}\-\d{4}\s\-\s\d{2}\-\w{3}\-\d{4}')
 percRegex = re.compile('(\d{1,2}\.\d{1,2}\%)|(WLIST)|(FULL)')
-weekRegex = re.compile('<p class="centeraligntext">(&nbsp;<br />)?([MTWRF])(<br />&nbsp;)?<\/p>')
-weekFRegex = re.compile('<p class="centeraligntext">(&nbsp;<br />)?([{week}])(<br />&nbsp;)?<\/p>'.format(week=Week))
+weekRegex = re.compile('<p class="centeraligntext">(<br>|<br \/>|&nbsp;)*?([MTWRF])')
+weekFRegex = re.compile('<p class="centeraligntext">(<br>|<br \/>|&nbsp;)*?([{week}])'.format(week=Week))
 emptyRegex = re.compile('<b>{faculty}\s[0-9]*?\s.+?<\/b>'.format(faculty=Facu))
 splitRegex = re.compile('<\/tr>\s*?<tr>')
-locatRegex = re.compile('<td CLASS="dett[lbtws]"NOWRAP>(([a-zA-Z]|\s|\&|\-)*?\d*?(<br \/>([a-zA-Z]|\s|\&|\-)*?\d*?)?)<\/td>')
+locatRegex = re.compile('<td CLASS="dett[lbtws]" ?NOWRAP(="")?>(.|\s)*?((Studley|Carleton|Consult|Sexton).*?)<\/td>', re.I)
 if Name == '.+?' and Digit == '\d*?': searchingName = '{faculty} in {Week} between {From} and {End}'.format(faculty=Facu, Week=Week, From=Time[0], End=Time[1])
 elif Name != '.+?': searchingName = '{name} in {Week} between {From} and {End}'.format(name=Name, Week=Week, From=Time[0], End=Time[1])
 else: searchingName = '{faculty} {digit} in {Week} between {From} and {End}'.format(faculty=Facu, digit=Digit, Week=Week, From=Time[0], End=Time[1])
+location = ''
 
 try:
     for term in Term:
@@ -78,8 +79,9 @@ try:
                 for detail in components[1:]:
                     try: crn = crnRegex.search(detail).groups()[0]
                     except AttributeError: continue
-                    location = locatRegex.search(detail).groups()[0].strip()
-                    if '<br />' in location: location = location.replace('<br />', ' & ')
+                    try: location = locatRegex.search(detail).groups()[2].strip()
+                    except AttributeError: print(locatRegex.search(detail).groups())
+                    if '<br />' in location: location = location.split('<br />')[0]
                     ctype = typeRegex.search(detail).group()
                     if ctype == 'Lec':
                         weeks = weekProcessor(weekFRegex.finditer(detail))
