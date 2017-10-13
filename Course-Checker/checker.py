@@ -1,6 +1,5 @@
 #!/usr/local/bin/python3
-import re, argparse, webbrowser, sys, os
-import requests
+import re, argparse, webbrowser, sys, os, json, requests
 from datetime import datetime 
 
 baseURL = 'https://dalonline.dal.ca/PROD/fysktime.P_DisplaySchedule?s_term={term}&s_crn=&s_subj={faculty}&s_numb=&n={page}&s_district=All'
@@ -33,7 +32,6 @@ decodeYear = lambda year: int(year / 100) - 1
 weekProcessor = lambda chunk: ''.join(map(lambda week: week.groups()[1], chunk))
 year = ((args.year or datetime.now().year) + 1) * 100
 __FALL__, __WINTER__, __SUMMER__ = year + 10, year + 20, year + 30
-
 Export = os.fstat(0) != os.fstat(1)# Check if stdin == stdout
 Page = [ encodePage(i) for i in range(1, 8) ]
 reverseTermMapping = {__FALL__: 'fall', __WINTER__: 'winter', __SUMMER__: 'summer'}
@@ -60,7 +58,6 @@ locatRegex = re.compile('<td CLASS="dett[lbtws]" ?NOWRAP(="")?>(.|\s)*?((Studley
 if Name == '.+?' and Digit == '\d*?': searchingName = '{faculty} in {Week} between {From} and {End}'.format(faculty=Facu, Week=Week, From=Time[0], End=Time[1])
 elif Name != '.+?': searchingName = '{name} in {Week} between {From} and {End}'.format(name=Name, Week=Week, From=Time[0], End=Time[1])
 else: searchingName = '{faculty} {digit} in {Week} between {From} and {End}'.format(faculty=Facu, digit=Digit, Week=Week, From=Time[0], End=Time[1])
-location = ''
 
 try:
     for term in Term:
