@@ -1,4 +1,4 @@
-#!/Library/Frameworks/Python.framework/Versions/3.5/bin/python3
+#!/usr/local/bin/python3
 import os, sys, subprocess, shutil
 
 if len(sys.argv) < 2:
