@@ -54,14 +54,14 @@ weekRegex = re.compile('<p class="centeraligntext">(<br>|<br \/>|&nbsp;)*?([MTWR
 weekFRegex = re.compile('<p class="centeraligntext">(<br>|<br \/>|&nbsp;)*?([{week}])'.format(week=Week))
 emptyRegex = re.compile('<b>{faculty}\s[0-9]*?\s.+?<\/b>'.format(faculty=Facu))
 splitRegex = re.compile('<\/tr>\s*?<tr>')
-locatRegex = re.compile('<td CLASS="dett[lbtws]" ?NOWRAP(="")?>(.|\s)*?((Studley|Carleton|Consult|Sexton).*?)<\/td>', re.I)
+locatRegex = re.compile('<td CLASS="dett[lbtws]" ?NOWRAP(="")?>(.|\s)*?((Studley|Carleton|Consult|Sexton|DISTANCE).*?)<\/td>', re.I)
 if Name == '.+?' and Digit == '\d*?': searchingName = '{faculty} in {Week} between {From} and {End}'.format(faculty=Facu, Week=Week, From=Time[0], End=Time[1])
 elif Name != '.+?': searchingName = '{name} in {Week} between {From} and {End}'.format(name=Name, Week=Week, From=Time[0], End=Time[1])
 else: searchingName = '{faculty} {digit} in {Week} between {From} and {End}'.format(faculty=Facu, digit=Digit, Week=Week, From=Time[0], End=Time[1])
 
 try:
     for term in Term:
-        if not Export: print('\x1b[0;30;47m{name} in {term} term for {faculty} (Year {year})\x1b[0m\n'.format(name=searchingName, term=reverseTermMapping[term], faculty=Facu, year=decodeYear(year)), '\n' + '=' * 90)
+        if not Export: print('\x1b[0;30;47m{name} in {term} term for {faculty} (Year {year})\x1b[0m\n'.format(name=searchingName, term=reverseTermMapping[term], faculty=Facu, year=decodeYear(year)), '\n' + '=' * 80)
         for index, page in enumerate(Page):
             searchURL = baseURL.format(term=term, faculty=Facu, page=page)
             source = requests.get(searchURL).text
@@ -71,13 +71,13 @@ try:
                 components = splitRegex.split(course.group())
                 try: header = nameRegex.search(components[0]).groups()[0]
                 except AttributeError: continue
-                if Export or (term - 30) % 100 == 0: header += dateRegex.search(components[0]).group() + '\n' # Show dates only in summers
+                if Export or (term - 30) % 100 == 0: header += '\n' + dateRegex.search(components[0]).group() + '\n' # Show dates only in summers
                 content = ''
                 for detail in components[1:]:
                     try: crn = crnRegex.search(detail).groups()[0]
                     except AttributeError: continue
                     try: location = locatRegex.search(detail).groups()[2].strip()
-                    except AttributeError: print(locatRegex.search(detail).groups())
+                    except AttributeError: pass
                     if '<br />' in location: location = location.split('<br />')[0]
                     ctype = typeRegex.search(detail).group()
                     if ctype == 'Lec':
@@ -95,5 +95,5 @@ try:
                         if not printable: break
                     percent = percRegex.search(detail).group()
                     content += '\t'.join([crn, ctype, weeks, time, percent, '\t' + location]) + '\n'
-                if printable: print(header + '\n' + '\t'.join(['CRN', 'Type', 'Weeks', 'Time', '\tPercentage', 'Location']) + '\n' + content + '\n' + '=' * 90, '\n')
+                if printable: print(header + '\n' + '\t'.join(['CRN', 'Type', 'Weeks', 'Time', '\tPercentage', 'Location']) + '\n' + content + '\n' + '=' * 80, '\n')
 except KeyboardInterrupt: pass
