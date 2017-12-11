@@ -11,6 +11,7 @@ parser.add_argument('-n', '--name', nargs='*', help='Name (Partial search is ava
 parser.add_argument('-f', '--faculty', help='Faculty (Shorthand of faculty name)')
 parser.add_argument('-r', '--range', metavar='TIME', default='MTWRF, 0:2400', help='''Time range the courses are available. Example: "MR, :1605"=Monday& Thursday, before 16:05, "M, 1605:"=Monday after 16:05, "1505:1605"=Any day between 15:05 and 16:05''')
 parser.add_argument('-y', '--year', type=int, help='Year of the timetable (Must be in format yyyy; Historical data may be unaccessible)')
+parser.add_argument('--date', metavar='DATE', default=None, help='Date range for filter. "17092018:"=Begin after 2018-Sep-17, ":17092018"=End before 2018-Sep-17')
 args = parser.parse_args() 
 if not (args.faculty and (args.name or args.digit or args.range)): 
     parser.print_help()
@@ -27,6 +28,11 @@ def searchByTime(timeRange):
     except: Time = (0, 2400)
     return week, Time
 
+def filterByDate(dateStandard, dateRange, compareMode):
+    begin, end = [datetime.strptime(each, '%d-%b-%Y') for each in dateRange.split(' - ')]
+    if compareMode == True: return end <= dateStandard
+    elif compareMode == False: return begin >= dateStandard
+
 encodePage = lambda number: int((number - 1) * 20 + 1)
 decodeYear = lambda year: int(year / 100) - 1
 weekProcessor = lambda chunk: ''.join(map(lambda week: week.groups()[1], chunk))
@@ -42,6 +48,8 @@ if args.open: openURL(baseURL, Term[0], Facu, Page)
 Name = '({})'.format('|'.join(args.name)) if args.name else '.+?'
 Digit = '({})'.format('|'.join(args.digit)) if args.digit else '\d*?'
 Week, Time = searchByTime(args.range)
+if args.date:
+    DateBefore, DateStd = ':' == args.date[0], datetime.strptime(args.date.strip(':'), '%d%m%Y')
 
 crnRegex  = re.compile('<b>(\d{5})<\/b>')
 coreRegex = re.compile('^<TD.*?COLSPAN="15" CLASS="detthdr">(.|\s)*?<tr.*valign=', re.M)
@@ -71,7 +79,11 @@ try:
                 components = splitRegex.split(course.group())
                 try: header = nameRegex.search(components[0]).groups()[0]
                 except AttributeError: continue
-                if Export or (term - 30) % 100 == 0: header += '\n' + dateRegex.search(components[0]).group() + '\n' # Show dates only in summers
+                if Export or (term - 30) % 100 == 0: 
+                    courseDate = dateRegex.search(components[0]).group()
+                    if args.date: 
+                        if not filterByDate(DateStd, courseDate, DateBefore): continue
+                    header += '\n' + courseDate + '\n' # Show dates only in summers
                 content = ''
                 for detail in components[1:]:
                     try: crn = crnRegex.search(detail).groups()[0]
