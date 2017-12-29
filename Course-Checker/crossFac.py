@@ -6,6 +6,7 @@ baseURL = 'https://dalonline.dal.ca/PROD/fysktime.P_DisplaySchedule?s_term={term
 parser = argparse.ArgumentParser(description='Search for the existence of courses')
 parser.add_argument('-t', '--term', help='Term (Available input: winter/fall/summer/w/f/s')
 parser.add_argument('-f', '--faculty', help='Faculty (Shorthand of faculty name)')
+parser.add_argument('-l', '--level', type=int, nargs='*', help='Keep courses from certain levels')
 parser.add_argument('-r', '--range', metavar='TIME', default='MTWRF, 0:2400', help='''Time range the courses are available. Example: "MR, :1605"=Monday& Thursday, before 16:05, "M, 1605:"=Monday after 16:05, "1505:1605"=Any day between 15:05 and 16:05''')
 parser.add_argument('-y', '--year', type=int, help='Year of the timetable (Must be in format yyyy; Historical data may be unaccessible)')
 parser.add_argument('--date', metavar='DATE', default=None, help='Date range for filter. "17092018:"=Begin after 2018-Sep-17, ":17092018"=End before 2018-Sep-17')
@@ -36,12 +37,13 @@ Term = termMapping[args.term]
 resourcePage = requests.get(baseURL.format(term=Term, faculty="CSCI", page=1)).text
 fList = re.findall('\<OPTION VALUE="([A-Z]{4})"', resourcePage)
 Week, Time = searchByTime(args.range)
+Level = str(args.level or range(1, 9))
 if args.date:
     DateBefore, DateStd = ':' == args.date[0], datetime.strptime(args.date.strip(':'), '%d%m%Y')
 
 crnRegex  = re.compile('<b>(\d{5})<\/b>')
 coreRegex = re.compile('^<TD.*?COLSPAN="15" CLASS="detthdr">(.|\s)*?<tr.*valign=', re.M)
-nameTemplate = '<b>({faculty}\s[0-9]*?\s.+?)<\/b>'
+nameTemplate = '<b>({faculty}\s{level}[0-9]{{2,3}}\s.+?)<\/b>'
 typeRegex = re.compile('(Lec|Lab|Tut|WkT|Ths|Int|WkS|Aud)')
 timeRegex = re.compile('[0-9]{4}\-[0-9]{4}')
 dateRegex = re.compile('\d{2}\-\w{3}\-\d{4}\s\-\s\d{2}\-\w{3}\-\d{4}')
@@ -53,7 +55,7 @@ locatRegex = re.compile('<td CLASS="dett[lbtws]" ?NOWRAP(="")?>(.|\s)*?((Studley
 
 try:
     for faculty in fList:
-        nameRegex = re.compile(nameTemplate.format(faculty=faculty), re.M)
+        nameRegex = re.compile(nameTemplate.format(faculty=faculty, level=Level), re.M)
         for index, page in enumerate(Page):
             searchURL = baseURL.format(term=Term, faculty=faculty, page=page)
             source = requests.get(searchURL).text
@@ -90,6 +92,6 @@ try:
                             printable = Time[0] <= pre and post <= Time[1]
                         if not printable: break
                     percent = percRegex.search(detail).group()
-                    content += '\t'.join([crn, ctype, weeks, time, percent, '\t' ]) + '\n'
-                if printable: print(header + '\n' + '\t'.join(['CRN', 'Type', 'Weeks', 'Time', '\tPercentage']) + '\n' + content + '\n' + '=' * 80, '\n')
+                    content += '\t'.join([crn, ctype+'\t', weeks, time, percent, '\t' ]) + '\n'
+                if printable: print(header + '\n' + '\t'.join(['CRN', '\tType', 'Weeks', 'Time', '\tPercentage']) + '\n' + content + '\n' + '=' * 80, '\n')
 except KeyboardInterrupt: pass
