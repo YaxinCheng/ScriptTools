@@ -73,7 +73,7 @@ try:
         for index, page in enumerate(Page):
             searchURL = baseURL.format(term=term, faculty=Facu, page=page)
             source = requests.get(searchURL).text
-            if not emptyRegex.search(source): break
+            if not emptyRegex.search(source): break# if page is empty, next term
             for course in coreRegex.finditer(source):
                 printable = True
                 components = splitRegex.split(course.group())
@@ -83,14 +83,14 @@ try:
                     courseDate = dateRegex.search(components[0]).group()
                     if args.date: 
                         if not filterByDate(DateStd, courseDate, DateBefore): continue
-                    header += '\n' + courseDate + '\n' # Show dates only in summers
-                content = ''
+                    header += '\n' + courseDate + '\n' # Show dates only in summers or Export mode
+                content = ''# Empty content string
                 for detail in components[1:]:
                     try: crn = crnRegex.search(detail).groups()[0]
                     except AttributeError: continue
                     try: location = locatRegex.search(detail).groups()[2].strip()
                     except AttributeError: pass
-                    if '<br />' in location: location = location.split('<br />')[0]
+                    if '<br />' in location: location = location.split('<br />')[0]# Keep only one in multiple locations
                     ctype = typeRegex.search(detail).group()
                     if ctype == 'Lec':
                         weeks = weekProcessor(weekFRegex.finditer(detail))

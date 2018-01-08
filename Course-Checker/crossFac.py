@@ -5,7 +5,6 @@ from datetime import datetime
 baseURL = 'https://dalonline.dal.ca/PROD/fysktime.P_DisplaySchedule?s_term={term}&s_crn=&s_subj={faculty}&s_numb=&n={page}&s_district=All'
 parser = argparse.ArgumentParser(description='Search for the existence of courses')
 parser.add_argument('-t', '--term', help='Term (Available input: winter/fall/summer/w/f/s')
-parser.add_argument('-f', '--faculty', help='Faculty (Shorthand of faculty name)')
 parser.add_argument('-l', '--level', type=int, nargs='*', help='Keep courses from certain levels')
 parser.add_argument('-r', '--range', metavar='TIME', default='MTWRF, 0:2400', help='''Time range the courses are available. Example: "MR, :1605"=Monday& Thursday, before 16:05, "M, 1605:"=Monday after 16:05, "1505:1605"=Any day between 15:05 and 16:05''')
 parser.add_argument('-y', '--year', type=int, help='Year of the timetable (Must be in format yyyy; Historical data may be unaccessible)')
