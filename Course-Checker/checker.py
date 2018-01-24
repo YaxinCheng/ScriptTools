@@ -51,9 +51,9 @@ Week, Time = searchByTime(args.range)
 if args.date:
     DateBefore, DateStd = ':' == args.date[0], datetime.strptime(args.date.strip(':'), '%d%m%Y')
 
-crnRegex  = re.compile('<b>(\d{5})<\/b>')
+crnRegex  = re.compile('(?<=<b>)\d{5}(?=<\/b>)')
 coreRegex = re.compile('^<TD.*?COLSPAN="15" CLASS="detthdr">(.|\s)*?<tr.*valign=', re.M)
-nameRegex = re.compile('<b>({faculty}\s{digit}\s.*?{name}.*?)<\/b>'.format(faculty=Facu, name=Name, digit=Digit), re.I|re.M)
+nameRegex = re.compile('(?<=<b>){faculty}\s{digit}\s.*?{name}.*?(?=<\/b>)'.format(faculty=Facu, name=Name, digit=Digit), re.I|re.M)
 typeRegex = re.compile('(Lec|Lab|Tut|WkT|Ths|Int|WkS|Aud)')
 timeRegex = re.compile('[0-9]{4}\-[0-9]{4}')
 dateRegex = re.compile('\d{2}\-\w{3}\-\d{4}\s\-\s\d{2}\-\w{3}\-\d{4}')
@@ -77,7 +77,7 @@ try:
             for course in coreRegex.finditer(source):
                 printable = True
                 components = splitRegex.split(course.group())
-                try: header = nameRegex.search(components[0]).groups()[0]
+                try: header = nameRegex.search(components[0]).group()
                 except AttributeError: continue
                 if Export or (term - 30) % 100 == 0: 
                     courseDate = dateRegex.search(components[0]).group()
@@ -86,7 +86,7 @@ try:
                     header += '\n' + courseDate + '\n' # Show dates only in summers or Export mode
                 content = ''# Empty content string
                 for detail in components[1:]:
-                    try: crn = crnRegex.search(detail).groups()[0]
+                    try: crn = crnRegex.search(detail).group()
                     except AttributeError: continue
                     try: location = locatRegex.search(detail).groups()[2].strip()
                     except AttributeError: pass

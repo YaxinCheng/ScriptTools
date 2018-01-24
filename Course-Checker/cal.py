@@ -1,4 +1,4 @@
-#!/Users/Yaxin.Cheng@iCloud.com/Developer/venv/bin/python
+#!/usr/local/bin/python
 import sys, argparse, re, pytz, copy, os
 from datetime import datetime, timedelta
 from ics import Calendar, Event
