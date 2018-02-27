@@ -6,7 +6,7 @@ baseURL = 'https://dalonline.dal.ca/PROD/fysktime.P_DisplaySchedule?s_term={term
 parser = argparse.ArgumentParser(description='Search for the existence of courses')
 parser.add_argument('-o', '--open', action='store_true', help='Open the url in the browser')
 parser.add_argument('-t', '--term', nargs='*', default=['f', 'w'], help='Term (Available input: winter/fall/summer/w/f/s; fall and winter by default)')
-parser.add_argument('-d', '--digit', nargs='*', help='Course Digit (Fuzzy search available (regex))')
+parser.add_argument('-d', '--digit', nargs='*', help='Course CRN (Fuzzy search available (regex))')
 parser.add_argument('-n', '--name', nargs='*', help='Name (Partial search is available)')
 parser.add_argument('-f', '--faculty', help='Faculty (Shorthand of faculty name)')
 parser.add_argument('-r', '--range', metavar='TIME', default='MTWRF, 0:2400', help='''Time range the courses are available. Example: "MR, :1605"=Monday& Thursday, before 16:05, "M, 1605:"=Monday after 16:05, "1505:1605"=Any day between 15:05 and 16:05''')
