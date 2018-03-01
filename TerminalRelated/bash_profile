@@ -1,0 +1,12 @@
+export PATH=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin:$PATH
+export PS1="> "
+export PATH="/usr/local/opt/openssl/bin:$PATH"
+
+test -e "${HOME}/.iterm2_shell_integration.bash" && source "${HOME}/.iterm2_shell_integration.bash"
+
+alias diff="/usr/local/bin/icdiff"
+
+export GREP_OPTIONS='--color=auto'
+export GREP_COLOR='1;92'
+export CLICOLOR=1
+export LSCOLORS='CxExxxxxgxxxxxgxgxCxCx'
