@@ -11,7 +11,11 @@ parser.add_argument('year', type=int, help='Year of the timetable (Must be in fo
 parser.add_argument('term', help='Term (Available input: winter/fall/summer/w/f/s; fall and winter by default)')
 parser.add_argument('crn', type=int, nargs='+', help='Course CRN (You can only register at most 10 courses at once')
 args = parser.parse_args()
-term = args.term
+decodeYear = lambda year: int(year / 100) - 1
+year = decodeYear(args.year)
+__FALL__, __WINTER__, __SUMMER__ = year + 10, year + 20, year + 30
+termMapping = {'fall': __FALL__, 'winter': __WINTER__, 'summer': __SUMMER__, 'f': __FALL__, 's': __SUMMER__, 'w': __SUMMER__}
+term = termMapping[args.term.lower()]
 PACK = [['term_in', term], ['RSTS_IN', 'DUMMY'], ['assoc_term_in', 'DUMMY'], ['CRN_IN', 'DUMMY'], ['start_date_in', 'DUMMY'], ['end_date_in', 'DUMMY'], ['SUBJ', 'DUMMY'], ['CRSE', 'DUMMY'], ['SEC', 'DUMMY'], ['LEVL', 'DUMMY'], ['CRED', 'DUMMY'], ['GMOD', 'DUMMY'], ['TITLE', 'DUMMY'], ['MESG', 'DUMMY'], ['REG_BTN', 'DUMMY'], ['RSTS_IN', 'RW'], ['CRN_IN', ''], ['assoc_term_in', ''], ['start_date_in', ''], ['end_date_in', ''], ['RSTS_IN', 'RW'], ['CRN_IN', ''], ['assoc_term_in', ''], ['start_date_in', ''], ['end_date_in', ''], ['RSTS_IN', 'RW'], ['CRN_IN', ''], ['assoc_term_in', ''], ['start_date_in', ''], ['end_date_in', ''], ['RSTS_IN', 'RW'], ['CRN_IN', ''], ['assoc_term_in', ''], ['start_date_in', ''], ['end_date_in', ''], ['RSTS_IN', 'RW'], ['CRN_IN', ''], ['assoc_term_in', ''], ['start_date_in', ''], ['end_date_in', ''], ['RSTS_IN', 'RW'], ['CRN_IN', ''], ['assoc_term_in', ''], ['start_date_in', ''], ['end_date_in', ''], ['RSTS_IN', 'RW'], ['CRN_IN', ''], ['assoc_term_in', ''], ['start_date_in', ''], ['end_date_in', ''], ['RSTS_IN', 'RW'], ['CRN_IN', ''], ['assoc_term_in', ''], ['start_date_in', ''], ['end_date_in', ''], ['RSTS_IN', 'RW'], ['CRN_IN', ''], ['assoc_term_in', ''], ['start_date_in', ''], ['end_date_in', ''], ['RSTS_IN', 'RW'], ['CRN_IN', ''], ['assoc_term_in', ''], ['start_date_in', ''], ['end_date_in', ''], ['regs_row', '0'], ['wait_row', '0'], ['add_row', '10'], ['REG_BTN', 'Submit Changes']]
 for index, crn in zip(COURSE_NUMS, args.crn):
     PACK[index][1] = str(crn)
