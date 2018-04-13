@@ -30,9 +30,11 @@ class DLThread(Thread):
         DLThread.lock.acquire()
         self.control.baseNum += len(imgs)
         DLThread.lock.release()
+        print('\rDownloading... 0/{}'.format(len(imgs)), end='\r')
         for index, imgURL in enumerate(imgs):
             with open(self.control.fileName.format(base + index), 'wb') as img:
                 img.write(requests.get(imgURL).content)
+            print('\rDownloading... {}/{}'.format(index+1, len(imgs)),end='\r')
         return len(imgs)
 
     def run(self):
