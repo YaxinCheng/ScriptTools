@@ -1,6 +1,6 @@
 from threading import Thread, Lock
-from queue import Queue
-import os, requests, re, time, sys
+from queue import Queue, Empty
+import os, requests, re, time
 
 class fileControl:
     fileDir = '/Volumes/Seagate Backup Plus Drive/Down/Hee/'
@@ -15,13 +15,14 @@ class DLThread(Thread):
     lock = Lock()
     control = fileControl()
     queue = Queue()
-    runningCount = -1
+    runningCount = 0
+    countDownTime = None
 
     def __init__(self):
         Thread.__init__(self, daemon=True)
 
     def _process(self, url):
-        print('Begin downloading:\n{}\n\n'.format(url))
+        print('Begin downloading:\n{}'.format(url))
         source = requests.get(url).text
         imgPattern = re.compile('http:\/\/.*?mo.*?\.jpg')
         imgs = imgPattern.findall(source)
@@ -39,7 +40,6 @@ class DLThread(Thread):
         last = None
         while url != last:
             DLThread.lock.acquire()
-            if self.runningCount == -1: self.runningCount == 0
             self.runningCount += 1
             DLThread.lock.release()
             last = url
@@ -47,8 +47,21 @@ class DLThread(Thread):
             DLThread.lock.acquire()
             self.runningCount -= 1
             DLThread.lock.release()
-            print('{} images downloaded. {} URLs in the queue'.format(count, self.queue.qsize()))
-            url = self.queue.get()
+            print('{} images downloaded. {} threads are downloading. {} URLs in the queue'.format(count, self.runningCount, self.queue.qsize()))
+            while(True):
+                if self.runningCount == 0 and self.queue.empty():
+                    if self.countDownTime is None:
+                        print('No process is running, system will exit after 10 second...')
+                        self.countDownTime = time.time()
+                    elif time.time() - self.countDownTime >= 10:
+                        print('No process is running, system exit')
+                        os._exit(0)
+                try:
+                    url = self.queue.get_nowait()
+                    if url != last: break
+                except Empty:
+                    time.sleep(1)
+                    continue
 
 threads = [DLThread() for _ in range(5)]
 for thread in threads: thread.start()
