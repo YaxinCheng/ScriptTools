@@ -27,9 +27,9 @@ class DLThread(Thread):
 
             with open(path, 'wb') as imgFile:
                 imgFile.write(requests.get(url).content)
-            self.callback()
 
             DLThread.lock.acquire()
+            self.callback()
             DLThread.runningCount -= 1
             DLThread.lock.release()
 
@@ -72,8 +72,7 @@ class ClipboardThread(Thread):
         while True:
             text = os.popen('pbpaste', 'r').read()
             if not text or text in self.visited or not self.match(text):
-                time.sleep(1)
-                continue
+                time.sleep(1); continue
             self.visited.add(text)
             self.outQueue.put(text)
-            if self.callback is not None: self.callback()
+            if self.callback is not None: self.callback(text)

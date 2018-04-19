@@ -1,3 +1,4 @@
+#!/usr/local/bin/python
 import os, sys, re, time
 from threading import Lock
 from Threads import SeekerThread, DLThread, ClipboardThread
@@ -8,17 +9,14 @@ maxThread = 10
 downloadPath = '/Users/cheng/Downloads/images/'
 downloadedCount = 0
 taskSize = 0
-lock = Lock()
 
 def downProg():
-    global downloadedCount, lock, taskSize
-    lock.acquire()
+    global downloadedCount, taskSize
     downloadedCount += 1
     print('\rDownloaded: {}/{}...'.format(downloadedCount, taskSize),
             end='\r')
-    lock.release()
 
-def clipboardProg():
+def clipboardProg(url):
     print('\r\033[KURL added', end='\r')
 
 def seekerProg(num):
@@ -45,7 +43,7 @@ def autoClose():
                     end='\r')
             countDown = time.time()
         elif time.time() - countDown >= 10:
-            print('\r\033[KSystem exist')
+            print('\r\033[KSystem exit')
             sys.exit(0)
         time.sleep(1)
     else: countDown = None
