@@ -5,8 +5,10 @@ export PATH="/usr/local/opt/openssl/bin:$PATH"
 test -e "${HOME}/.iterm2_shell_integration.bash" && source "${HOME}/.iterm2_shell_integration.bash"
 
 alias diff="/usr/local/bin/icdiff"
+alias ccat="/usr/local/bin/pygmentize -g"
 
 export GREP_OPTIONS='--color=auto'
 export GREP_COLOR='1;92'
 export CLICOLOR=1
 export LSCOLORS='CxExxxxxgxxxxxgxgxCxCx'
+export PATH="/usr/local/opt/sqlite/bin:$PATH"

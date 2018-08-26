@@ -1,25 +1,24 @@
 syntax on
 set background=dark
-" colorscheme monokai
+colorscheme gruvbox
 set t_Co=256
 highlight Comment cterm=bold
 set autoindent
 set smartindent
 set clipboard=unnamed
-filetype plugin indent on
-" By default, tab and auto-indentation are 4
-set tabstop=4 shiftwidth=4
-set softtabstop=0 noexpandtab
-
 set hlsearch
+filetype plugin indent on
+set display+=lastline
 set backspace=start,eol,indent 
 if has("autocmd")
   au BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g'\"" | endif
 endif
-" For c files, set tabs to 2 and auto-indentation to 2
-autocmd Filetype c setlocal ts=2 sw=2 expandtab
+set number relativenumber
 
-" Vundle settings starts
+" indent
+set tabstop=4 shiftwidth=4 softtabstop=0 expandtab
+
+" Vundle settings
 set nocompatible
 filetype off
 set rtp+=~/.vim/bundle/Vundle.vim
@@ -27,14 +26,14 @@ call vundle#begin()
 Plugin 'VundleVim/Vundle.vim'
 Plugin 'Valloric/YouCompleteMe'
 Plugin 'Yggdroot/indentLine'
-Plugin 'jiangmiao/auto-pairs'
+Plugin 'tmhedberg/SimpylFold'
+Plugin 'keith/swift.vim'
+Plugin 'scrooloose/nerdtree'
+Plugin 'vim-airline/vim-airline'
+Plugin 'vim-airline/vim-airline-themes'
+Plugin 'skywind3000/asyncrun.vim'
 call vundle#end()
 filetype plugin indent on
-" Vundle setting ends
-
-" F5 to run code
-autocmd Filetype python nnoremap <F5> <Esc>:w<CR>:exec '!python' shellescape(@%, 1)<CR>
-autocmd Filetype c nnoremap <F5> <Esc>:w<CR>:exec '!gcc % -o %:r && ./%:r'<CR>
 
 " Remap for window functions
 nnoremap <C-J> <C-W><C-J>
@@ -44,16 +43,61 @@ nnoremap <C-L> <C-W><C-L>
 
 " YouCompleteMe
 set completeopt-=preview
-let g:ycm_path_to_python_interpreter='/usr/local/bin/python3.6'
+let g:ycm_path_to_python_interpreter='/usr/local/bin/python'
 let g:ycm_seed_identifiers_with_syntax=1
-" let g:ycm_add_preview_to_completeopt = 0
+let g:ycm_confirm_extra_conf=0
+let g:ycm_complete_in_strings=1
+let g:ycm_global_ycm_extra_conf = '~/.vim/bundle/YouCompleteMe/third_party/ycmd/cpp/ycm/.ycm_extra_conf.py'
+let g:ycm_add_preview_to_completeopt = 0
 " let g:ycm_autoclose_preview_window_after_completion = 1
 " let g:ycm_autoclose_preview_window_after_insertion = 1
-
-" Airline
-" let g:airline#extensions#tabline#enabled = 1
-let g:airline_theme='wombat'
 
 " IndentLine
 let g:indentLine_char='¦'
 autocmd Filetype python let g:indentLine_enabled=1
+
+" Virtualenv support
+py3 << EOF
+import os, sys
+if 'VIRTUAL_ENV' in os.environ:
+	activate = os.path.join(os.environ['VIRTUAL_ENV'], 'bin/activate_this.py')
+	exec(open(activate).read(), dict(__file__=activate))
+EOF
+
+" SimplyFold
+let g:SimplyFold_fold_import=1
+nnoremap <space> za
+vnoremap <space> zf
+if line('$') > 100 | set foldlevelstart=1 | else | set foldlevelstart=20 | endif
+highlight Folded ctermbg=16 
+
+" NerdTree
+nmap <F4> :NERDTreeToggle<CR>
+" open nerdtree automatically if no file is specified
+autocmd StdinReadPre * let s:std_in=1
+autocmd VimEnter * if argc() == 0 && !exists("s:std_in") | NERDTree | endif
+" Close vim if the only window left is a NerdTree
+autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
+
+" Airline
+let g:airline_theme='gruvbox'
+
+" Async run
+let g:asyncrun_open=15
+nnoremap <F5> : call <SID>compile_and_run()<CR>
+
+function! s:compile_and_run()
+    exec 'w'
+    if &filetype == 'c'
+        exec "AsyncRun! time gcc % -o %<; ./%<"
+    elseif &filetype == 'cpp'
+        exec "AsyncRun! time g++ -std=c++11 % -o %<; ./%<"
+    elseif &filetype == 'python'
+        exec "AsyncRun! time python %"
+    endif
+endfunction
+" Exit quickfix window if it's the only one
+aug QFClose
+  au!
+  au WinEnter * if winnr('$') == 1 && getbufvar(winbufnr(winnr()), "&buftype") == "quickfix"|q|endif
+aug END
